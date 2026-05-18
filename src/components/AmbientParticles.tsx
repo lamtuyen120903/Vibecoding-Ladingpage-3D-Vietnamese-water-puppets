@@ -2,7 +2,7 @@ import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
-const FIREFLY_COUNT = 60
+const FIREFLY_COUNT = 140
 
 // Warm yellow to soft green color range
 const COLOR_WARM = new THREE.Color('#f8e868')
@@ -12,36 +12,56 @@ export default function AmbientParticles() {
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const dummy = useMemo(() => new THREE.Object3D(), [])
 
-  // Store base positions and random offsets for Brownian motion
+  // Each firefly has a "home" point and orbits around it with extra Brownian noise,
+  // so the swarm fills the whole visible volume and roams freely.
   const particleData = useMemo(() => {
     const data: Array<{
       baseX: number
       baseY: number
       baseZ: number
-      phaseX: number
-      phaseY: number
-      phaseZ: number
-      speedX: number
-      speedY: number
-      speedZ: number
+      // Orbit (slow circular drift around home point)
+      orbitRadius: number
+      orbitSpeed: number
+      orbitPhase: number
+      orbitTiltY: number
+      orbitTiltZ: number
+      // Brownian noise (small jitter on top of orbit)
+      noisePhaseX: number
+      noisePhaseY: number
+      noisePhaseZ: number
+      noiseSpeedX: number
+      noiseSpeedY: number
+      noiseSpeedZ: number
+      noiseAmpX: number
+      noiseAmpY: number
+      noiseAmpZ: number
+      // Blink
       blinkPhase: number
       blinkSpeed: number
     }> = []
 
     for (let i = 0; i < FIREFLY_COUNT; i++) {
-      // Spread around the stage area
+      // Wide spread covering the full visible scene
       const angle = Math.random() * Math.PI * 2
-      const radius = 2 + Math.random() * 5
+      const radius = 1 + Math.random() * 14 // up to 15 units from center
       data.push({
         baseX: Math.cos(angle) * radius,
-        baseY: 0.5 + Math.random() * 2.5,
-        baseZ: -3 + Math.sin(angle) * radius * 0.5,
-        phaseX: Math.random() * Math.PI * 2,
-        phaseY: Math.random() * Math.PI * 2,
-        phaseZ: Math.random() * Math.PI * 2,
-        speedX: 0.3 + Math.random() * 0.4,
-        speedY: 0.2 + Math.random() * 0.3,
-        speedZ: 0.25 + Math.random() * 0.35,
+        baseY: -1 + Math.random() * 9,           // y ∈ [-1, 8]
+        baseZ: -10 + Math.sin(angle) * radius * 0.8 + Math.random() * 8, // wider z spread
+        orbitRadius: 0.8 + Math.random() * 2.5,
+        orbitSpeed: 0.15 + Math.random() * 0.35,
+        orbitPhase: Math.random() * Math.PI * 2,
+        orbitTiltY: (Math.random() - 0.5) * 1.5, // tilt orbit plane in Y
+        orbitTiltZ: (Math.random() - 0.5) * 1.5, // tilt orbit plane in Z
+        noisePhaseX: Math.random() * Math.PI * 2,
+        noisePhaseY: Math.random() * Math.PI * 2,
+        noisePhaseZ: Math.random() * Math.PI * 2,
+        noiseSpeedX: 0.4 + Math.random() * 0.6,
+        noiseSpeedY: 0.3 + Math.random() * 0.5,
+        noiseSpeedZ: 0.35 + Math.random() * 0.55,
+        noiseAmpX: 0.35 + Math.random() * 0.4,
+        noiseAmpY: 0.25 + Math.random() * 0.35,
+        noiseAmpZ: 0.3 + Math.random() * 0.4,
         blinkPhase: Math.random() * Math.PI * 2,
         blinkSpeed: 1.5 + Math.random() * 2.0,
       })
@@ -53,7 +73,6 @@ export default function AmbientParticles() {
   const colors = useMemo(() => {
     const colorArray = new Float32Array(FIREFLY_COUNT * 3)
     for (let i = 0; i < FIREFLY_COUNT; i++) {
-      // Blend between warm yellow and soft green
       const t = Math.random()
       const c = COLOR_WARM.clone().lerp(COLOR_GREEN, t)
       colorArray[i * 3] = c.r
@@ -70,20 +89,26 @@ export default function AmbientParticles() {
     for (let i = 0; i < FIREFLY_COUNT; i++) {
       const p = particleData[i]
 
-      // Brownian motion via noise-based position offsets
-      const noiseX = Math.sin(elapsed * p.speedX + p.phaseX) * 0.3
-      const noiseY = Math.cos(elapsed * p.speedY + p.phaseY) * 0.2
-      const noiseZ = Math.sin(elapsed * p.speedZ + p.phaseZ) * 0.25
+      // Orbit drift — slow circle around home point, tilted in Y/Z
+      const orbitT = elapsed * p.orbitSpeed + p.orbitPhase
+      const ox = Math.cos(orbitT) * p.orbitRadius
+      const oz = Math.sin(orbitT) * p.orbitRadius
+      const oy = Math.sin(orbitT * 0.7) * p.orbitRadius * 0.5
+
+      // Brownian jitter
+      const nx = Math.sin(elapsed * p.noiseSpeedX + p.noisePhaseX) * p.noiseAmpX
+      const ny = Math.cos(elapsed * p.noiseSpeedY + p.noisePhaseY) * p.noiseAmpY
+      const nz = Math.sin(elapsed * p.noiseSpeedZ + p.noisePhaseZ) * p.noiseAmpZ
 
       dummy.position.set(
-        p.baseX + noiseX,
-        p.baseY + noiseY,
-        p.baseZ + noiseZ
+        p.baseX + ox + p.orbitTiltY * oy + nx,
+        p.baseY + oy + p.orbitTiltZ * ox * 0.3 + ny,
+        p.baseZ + oz + nz,
       )
 
-      // Blink animation — sin wave controlling opacity
+      // Blink animation — sin wave controlling opacity + size
       const blink = (Math.sin(elapsed * p.blinkSpeed + p.blinkPhase) + 1) * 0.5
-      const scale = 0.04 + blink * 0.04 // size pulses too
+      const scale = 0.045 + blink * 0.045
       dummy.scale.set(scale, scale, scale)
 
       dummy.updateMatrix()
@@ -95,10 +120,10 @@ export default function AmbientParticles() {
       const g = colors[colorIdx + 1] * (0.6 + blink * 0.4)
       const b = colors[colorIdx + 2] * (0.5 + blink * 0.5)
       meshRef.current.setColorAt(i, new THREE.Color(r, g, b))
-      meshRef.current.setMatrixAt(i, dummy.matrix)
     }
 
     meshRef.current.instanceMatrix.needsUpdate = true
+    if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true
   })
 
   return (

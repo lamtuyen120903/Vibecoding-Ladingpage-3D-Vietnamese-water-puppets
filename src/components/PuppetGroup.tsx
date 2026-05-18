@@ -42,7 +42,8 @@ export default function PuppetGroup({ currentAct, phase, onPuppetClick, onPuppet
       return all.map(cfg => ({
         ...cfg,
         animation: 'dance',
-        animationSpeed: 0.9 + Math.random() * 0.3,
+        animationSpeed: 1,
+        animationOffset: 0,
       }))
     }
     if (currentAct === 'intro') {
@@ -97,13 +98,12 @@ function makeIntroConfig(): PuppetConfig {
   }
 }
 
-// Màn 2: Automation — đội rối múa sôi động, mỗi rối 1 kiểu
+// Màn 2: Automation — toàn bộ rối múa "dance" đồng đều
 function makeAutomationConfigs(): PuppetConfig[] {
   const projs = getProjectsByCategory('automation')
   const outfits = ['#1a6a5a', '#8a2020', '#2a4a8a', '#6a3a1a', '#1a5a3a', '#5a1a5a']
   const secondaries = ['#c8a040', '#1a6a5a', '#c4953a', '#2a6a4a', '#8a6a30', '#c87040']
   const headwears = ['#8b1a1a', '#1a5a3a', '#c4953a', '#2a3a6a', '#6a3a1a', '#3a1a4a']
-  const anims: string[] = ['dance', 'wave', 'bow', 'dance', 'wave', 'dance']
 
   return projs.map((p, i) => {
     const cols = projs.length
@@ -117,19 +117,18 @@ function makeAutomationConfigs(): PuppetConfig[] {
       outfitSecondary: secondaries[i % secondaries.length],
       headwear: headwears[i % headwears.length],
       scale: 0.8,
-      animation: anims[i % anims.length],
-      animationSpeed: 0.9 + (i % 3) * 0.1,
-      animationOffset: i * 1.2,
+      animation: 'dance',
+      animationSpeed: 1,
+      animationOffset: 0,
       groupIndex: i,
       groupTotal: cols,
     }
   })
 }
 
-// Màn 3: AI — đội rối phát sáng xoay + múa
+// Màn 3: Vibe Coding — toàn bộ rối múa "dance" đồng đều
 function makeAIConfigs(): PuppetConfig[] {
   const projs = getProjectsByCategory('ai')
-  const anims: string[] = ['glow', 'dance', 'wave', 'glow', 'dance']
 
   return projs.map((p, i) => {
     const cols = projs.length
@@ -143,9 +142,9 @@ function makeAIConfigs(): PuppetConfig[] {
       outfitSecondary: '#c4953a',
       headwear: '#c4953a',
       scale: 0.85,
-      animation: anims[i % anims.length],
-      animationSpeed: 0.8 + (i % 2) * 0.15,
-      animationOffset: i * 1.5,
+      animation: 'dance',
+      animationSpeed: 1,
+      animationOffset: 0,
     }
   })
 }

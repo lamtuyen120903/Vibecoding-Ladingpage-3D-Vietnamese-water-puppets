@@ -1,7 +1,11 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { useGLTF } from '@react-three/drei'
 
 import * as THREE from 'three'
+
+const CUNG_DINH_URL = '/cung-dinh.glb'
+useGLTF.preload(CUNG_DINH_URL, false, true)
 
 const LERP_SPEEDS = [0.025, 0.03, 0.035, 0.028]
 const PLATFORM_WIDTH = 1.2
@@ -90,277 +94,7 @@ export default function ThuyDinh() {
   return (
     <group position={[0, -0.4, -4.5]}>
       {/* ===== CUNG ĐÌNH — Thăng Long water puppet theater (reference-accurate) ===== */}
-      <group position={[0, -0.6, 0.5]} scale={[1.3, 1, 1]}>
-
-      {/* === DARK BACKDROP === */}
-      <mesh position={[0, 2.5, -1.2]} material={curtainBlueDark}>
-        <boxGeometry args={[8, 6, 0.08]} />
-      </mesh>
-
-      {/* === DARK TEAL CURTAINS hanging behind building === */}
-      {[-2.5, -1.5, -0.5, 0.5, 1.5, 2.5].map((x, i) => (
-        <mesh key={`crt-${i}`} position={[x, 2.5, -0.6]} material={curtainBlue}>
-          <boxGeometry args={[0.9, 3.5, 0.03]} />
-        </mesh>
-      ))}
-      {/* Curtain folds — slight depth variation */}
-      {[-2, -1, 0, 1, 2].map((x, i) => (
-        <mesh key={`cfold-${i}`} position={[x, 2.5, -0.55]} material={curtainBlueDark}>
-          <boxGeometry args={[0.15, 3.5, 0.02]} />
-        </mesh>
-      ))}
-
-      {/* === LOWER WALL — gray stone with red dragon band (like reference) === */}
-      {/* Main stone wall */}
-      <mesh position={[0, 1, 0.9]} material={stoneGray}>
-        <boxGeometry args={[6.2, 2, 0.12]} />
-      </mesh>
-      {/* Stone wall texture — vertical panel lines */}
-      {[-2.6, -1.3, 0, 1.3, 2.6].map((x, i) => (
-        <mesh key={`sline-${i}`} position={[x, 1, 0.97]} material={stoneDark}>
-          <boxGeometry args={[0.03, 1.9, 0.01]} />
-        </mesh>
-      ))}
-
-      {/* RED DRAGON BAND — horizontal red strip with gold dragons (center of wall) */}
-      <mesh position={[0, 1.1, 0.97]} material={redPanel}>
-        <boxGeometry args={[5.8, 0.55, 0.03]} />
-      </mesh>
-      {/* Gold borders on dragon band */}
-      <mesh position={[0, 1.38, 0.985]} material={gold}><boxGeometry args={[5.9, 0.04, 0.02]} /></mesh>
-      <mesh position={[0, 0.82, 0.985]} material={gold}><boxGeometry args={[5.9, 0.04, 0.02]} /></mesh>
-      {/* Gold dragon relief panels */}
-      {[-1.8, -0.6, 0.6, 1.8].map((x, i) => (
-        <group key={`dragon-${i}`} position={[x, 1.1, 1.0]}>
-          <mesh material={gold}><boxGeometry args={[0.9, 0.35, 0.015]} /></mesh>
-          {/* Dragon body swirl */}
-          <mesh position={[0.15, 0, 0.01]} material={gold}>
-            <sphereGeometry args={[0.08, 32, 24]} />
-          </mesh>
-          <mesh position={[-0.2, 0.05, 0.01]} material={gold} rotation={[0, 0, 0.4]}>
-            <boxGeometry args={[0.25, 0.04, 0.01]} />
-          </mesh>
-          <mesh position={[0.2, -0.05, 0.01]} material={gold} rotation={[0, 0, -0.3]}>
-            <boxGeometry args={[0.2, 0.04, 0.01]} />
-          </mesh>
-        </group>
-      ))}
-
-      {/* Hoa văn chữ Thọ 壽 lattice panels — gray stone with geometric pattern */}
-      {[-2.6, 2.6].map((x, i) => (
-        <group key={`tho-panel-${i}`} position={[x, 1.1, 0.98]}>
-          {/* Frame */}
-          <mesh material={stoneBase}><boxGeometry args={[0.5, 0.5, 0.02]} /></mesh>
-          {/* Cross-hatch geometric Thọ pattern */}
-          <mesh material={stoneDark} position={[0, 0, 0.01]}><boxGeometry args={[0.35, 0.35, 0.01]} /></mesh>
-          {/* Inner square */}
-          <mesh material={stoneBase} position={[0, 0, 0.015]}><boxGeometry args={[0.22, 0.22, 0.008]} /></mesh>
-          {/* Cross lines */}
-          <mesh material={stoneDark} position={[0, 0, 0.02]}><boxGeometry args={[0.3, 0.03, 0.005]} /></mesh>
-          <mesh material={stoneDark} position={[0, 0, 0.02]}><boxGeometry args={[0.03, 0.3, 0.005]} /></mesh>
-          {/* Diagonal crosses */}
-          <mesh material={stoneDark} position={[0, 0, 0.02]} rotation={[0, 0, 0.785]}>
-            <boxGeometry args={[0.25, 0.025, 0.005]} />
-          </mesh>
-          <mesh material={stoneDark} position={[0, 0, 0.02]} rotation={[0, 0, -0.785]}>
-            <boxGeometry args={[0.25, 0.025, 0.005]} />
-          </mesh>
-        </group>
-      ))}
-
-      {/* === STONE PILLARS — gray like reference (NOT red lacquer) === */}
-      {[-3.1, 3.1].map((x, i) => (
-        <group key={`sp-${i}`} position={[x, 1.5, 0.5]}>
-          <mesh material={stoneGray}><boxGeometry args={[0.4, 3, 0.6]} /></mesh>
-          {/* Capital */}
-          <mesh position={[0, 1.55, 0]} material={stoneBase}>
-            <boxGeometry args={[0.5, 0.1, 0.7]} />
-          </mesh>
-          {/* Base */}
-          <mesh position={[0, -1.55, 0]} material={stoneDark}>
-            <boxGeometry args={[0.5, 0.1, 0.7]} />
-          </mesh>
-        </group>
-      ))}
-
-      {/* === HOÀNH PHI — red/gold sign board above wall === */}
-      <mesh position={[0, 2.5, 0.92]} material={redPanel}>
-        <boxGeometry args={[5.6, 0.6, 0.08]} />
-      </mesh>
-      {/* Gold frame around hoành phi */}
-      <mesh position={[0, 2.81, 0.96]} material={gold}><boxGeometry args={[5.7, 0.05, 0.025]} /></mesh>
-      <mesh position={[0, 2.19, 0.96]} material={gold}><boxGeometry args={[5.7, 0.05, 0.025]} /></mesh>
-      {[-2.85, 2.85].map((x, i) => (
-        <mesh key={`hpv-${i}`} position={[x, 2.5, 0.96]} material={gold}>
-          <boxGeometry args={[0.05, 0.65, 0.025]} />
-        </mesh>
-      ))}
-      {/* Gold text/ornament blocks inside */}
-      {[-1.8, -0.6, 0.6, 1.8].map((x, i) => (
-        <mesh key={`hptxt-${i}`} position={[x, 2.5, 0.97]} material={gold}>
-          <boxGeometry args={[0.8, 0.3, 0.015]} />
-        </mesh>
-      ))}
-
-      {/* ===== LOWER ROOF — wide, curved upward at edges ===== */}
-      {/* Main roof slab */}
-      <mesh position={[0, 3.1, 0.2]} material={roofRidge}>
-        <boxGeometry args={[7.5, 0.12, 2.8]} />
-      </mesh>
-      {/* Front slope — terracotta tiles */}
-      <mesh position={[0, 3.25, 1.35]} rotation={[0.32, 0, 0]} material={roofTileMat}>
-        <boxGeometry args={[8, 0.08, 2.4]} />
-      </mesh>
-      {/* Tile rows on front slope */}
-      {Array.from({ length: 10 }).map((_, r) => (
-        <mesh key={`ftile-${r}`} position={[0, 3.2 + r * 0.035, 1.6 - r * 0.2]}
-          rotation={[0.32, 0, 0]} material={roofTileMat}>
-          <boxGeometry args={[8.2, 0.02, 0.18]} />
-        </mesh>
-      ))}
-      {/* Back slope */}
-      <mesh position={[0, 3.25, -0.9]} rotation={[-0.32, 0, 0]} material={roofTileMat}>
-        <boxGeometry args={[8, 0.08, 2]} />
-      </mesh>
-      {/* Roof edge — curved upward at left/right corners (đao mái cong) */}
-      {[-1, 1].map((side) => (
-        <group key={`rcurve-${side}`}>
-          {/* Progressive upward curve — 5 segments */}
-          {[0, 1, 2, 3, 4].map((seg) => {
-            const xOff = side * (3.6 + seg * 0.35)
-            const yOff = seg * seg * 0.04
-            const rotZ = side * seg * 0.06
-            return (
-              <mesh key={`rc-${seg}`} position={[xOff, 3.15 + yOff, 1.6 - seg * 0.1]}
-                rotation={[0.32 - seg * 0.03, 0, rotZ]} material={roofTileMat}>
-                <boxGeometry args={[0.5, 0.06, 1.8 - seg * 0.2]} />
-              </mesh>
-            )
-          })}
-        </group>
-      ))}
-      {/* Gold ridge beam on lower roof */}
-      <mesh position={[0, 3.55, 0.2]} material={gold}>
-        <boxGeometry args={[8, 0.1, 0.1]} />
-      </mesh>
-      {/* Ridge ornament — gold ball */}
-      <mesh position={[0, 3.65, 0.2]} material={gold}>
-        <sphereGeometry args={[0.1, 32, 24]} />
-      </mesh>
-      {/* Gold eave trim along front edge */}
-      <mesh position={[0, 3.05, 2.35]} rotation={[0.32, 0, 0]} material={gold}>
-        <boxGeometry args={[8.5, 0.06, 0.08]} />
-      </mesh>
-
-      {/* ===== UPPER LEVEL — red wall between two roofs ===== */}
-      <mesh position={[0, 3.9, 0.1]} material={redPanel}>
-        <boxGeometry args={[3.8, 0.6, 0.7]} />
-      </mesh>
-      {/* Gold trim on upper wall */}
-      <mesh position={[0, 4.21, 0.46]} material={gold}><boxGeometry args={[3.9, 0.04, 0.02]} /></mesh>
-      <mesh position={[0, 3.59, 0.46]} material={gold}><boxGeometry args={[3.9, 0.04, 0.02]} /></mesh>
-      {/* Red panel detail */}
-      <mesh position={[0, 3.9, 0.47]} material={redPanelDark}>
-        <boxGeometry args={[3.6, 0.4, 0.02]} />
-      </mesh>
-      {/* Gold decorative squares */}
-      {[-1.2, 0, 1.2].map((x, i) => (
-        <mesh key={`usq-${i}`} position={[x, 3.9, 0.49]} material={gold}>
-          <boxGeometry args={[0.2, 0.2, 0.01]} />
-        </mesh>
-      ))}
-
-      {/* ===== UPPER ROOF — smaller, also curved ===== */}
-      <mesh position={[0, 4.55, 0.1]} material={roofRidge}>
-        <boxGeometry args={[4.5, 0.1, 1.8]} />
-      </mesh>
-      <mesh position={[0, 4.7, 0.7]} rotation={[0.38, 0, 0]} material={roofTileMat}>
-        <boxGeometry args={[5, 0.07, 1.2]} />
-      </mesh>
-      {Array.from({ length: 6 }).map((_, r) => (
-        <mesh key={`utile-${r}`} position={[0, 4.65 + r * 0.03, 0.85 - r * 0.18]}
-          rotation={[0.38, 0, 0]} material={roofTileMat}>
-          <boxGeometry args={[5.1, 0.018, 0.15]} />
-        </mesh>
-      ))}
-      <mesh position={[0, 4.7, -0.5]} rotation={[-0.38, 0, 0]} material={roofTileMat}>
-        <boxGeometry args={[5, 0.07, 1.2]} />
-      </mesh>
-      {/* Curved edge on upper roof */}
-      {[-1, 1].map((side) => (
-        <group key={`urcurve-${side}`}>
-          {[0, 1, 2, 3].map((seg) => (
-            <mesh key={`urc-${seg}`}
-              position={[side * (2.2 + seg * 0.35), 4.6 + seg * seg * 0.035, 0.85 - seg * 0.1]}
-              rotation={[0.38 - seg * 0.04, 0, side * seg * 0.07]} material={roofTileMat}>
-              <boxGeometry args={[0.45, 0.05, 1.1 - seg * 0.15]} />
-            </mesh>
-          ))}
-        </group>
-      ))}
-      {/* Gold upper ridge */}
-      <mesh position={[0, 4.95, 0.1]} material={gold}>
-        <boxGeometry args={[5.2, 0.08, 0.08]} />
-      </mesh>
-      <mesh position={[0, 5.05, 0.1]} material={gold}>
-        <sphereGeometry args={[0.1, 32, 24]} />
-      </mesh>
-      {/* Gold eave trim */}
-      <mesh position={[0, 4.5, 1.2]} rotation={[0.38, 0, 0]} material={gold}>
-        <boxGeometry args={[5.3, 0.05, 0.06]} />
-      </mesh>
-
-      {/* ===== ĐAO MÁI — Dragon heads at roof corner tips ===== */}
-      {([
-        [-4.5, 3.3, 1.8, .32, 0, -.35], [4.5, 3.3, 1.8, .32, 0, .35],
-        [-4.5, 3.3, -1.2, -.32, 0, -.35], [4.5, 3.3, -1.2, -.32, 0, .35],
-        [-2.8, 4.75, 0.9, .38, 0, -.28], [2.8, 4.75, 0.9, .38, 0, .28],
-        [-2.8, 4.75, -0.5, -.38, 0, -.28], [2.8, 4.75, -0.5, -.38, 0, .28],
-      ] as [number,number,number,number,number,number][]).map(([x,y,z,rx,ry,rz], i) => {
-        const dir = i % 2 === 0 ? -1 : 1
-        return (
-          <group key={`dm${i}`} position={[x,y,z]} rotation={[rx,ry,rz]}>
-            {/* Curved extension arm */}
-            <mesh material={roofRidge}><boxGeometry args={[1.4, 0.08, 0.1]} /></mesh>
-            {/* Dragon head — sphere + snout + horns */}
-            <mesh position={[dir * 0.8, 0.15, 0]} material={gold}>
-              <sphereGeometry args={[0.12, 32, 24]} />
-            </mesh>
-            {/* Snout */}
-            <mesh position={[dir * 0.95, 0.18, 0]} rotation={[0, 0, dir * -0.3]} material={gold}>
-              <boxGeometry args={[0.15, 0.06, 0.06]} />
-            </mesh>
-            {/* Horn/crest */}
-            <mesh position={[dir * 0.75, 0.3, 0]} rotation={[0, 0, dir * 0.4]} material={gold}>
-              <boxGeometry args={[0.08, 0.15, 0.04]} />
-            </mesh>
-            {/* Jaw */}
-            <mesh position={[dir * 0.88, 0.08, 0]} material={gold}>
-              <boxGeometry args={[0.12, 0.04, 0.05]} />
-            </mesh>
-          </group>
-        )
-      })}
-
-      {/* ===== CỜ — flag on left side ===== */}
-      <group position={[-3.5, 4.8, 0.6]} rotation={[0.1, 0.3, -0.1]}>
-        <mesh position={[0, 0.3, 0]} material={wood}>
-          <cylinderGeometry args={[0.02, 0.02, 0.8, 32]} />
-        </mesh>
-        {/* Layered flag — red/green/gold stripes */}
-        <mesh position={[0.25, 0.5, 0]} material={redPanel}>
-          <boxGeometry args={[0.6, 0.5, 0.015]} />
-        </mesh>
-        <mesh position={[0.25, 0.48, 0.01]} material={greenFringe}>
-          <boxGeometry args={[0.4, 0.12, 0.01]} />
-        </mesh>
-        <mesh position={[0.25, 0.38, 0.01]} material={gold}>
-          <boxGeometry args={[0.35, 0.1, 0.008]} />
-        </mesh>
-      </group>
-
-
-      </group>
+      <CungDinhModel />
       {/* ===== SIDE PLATFORMS (wings) — beside the water pool ===== */}
       {[-1, 1].map((side) => (
         <group key={`wing-${side}`} position={[side * 5.2, -0.5, 5.3]}>
@@ -580,63 +314,6 @@ export default function ThuyDinh() {
       ))}
 
 
-      {/* ===== PALM TREE (right side, between stage and water) ===== */}
-      <group position={[3.0, 0, 3.5]}>
-        {/* Trunk — green bamboo-like */}
-        <mesh position={[0, 1.5, 0]}>
-          <cylinderGeometry args={[0.04, 0.06, 3, 12]} />
-          <meshStandardMaterial color="#2a8830" roughness={0.5} emissive="#1a5818" emissiveIntensity={0.15} />
-        </mesh>
-        {/* Trunk segments */}
-        {[0.5, 1.0, 1.5, 2.0].map((y, i) => (
-          <mesh key={`seg-${i}`} position={[0, y, 0]}>
-            <cylinderGeometry args={[0.055, 0.055, 0.03, 12]} />
-            <meshStandardMaterial color="#1a6820" roughness={0.5} emissive="#0a4810" emissiveIntensity={0.1} />
-          </mesh>
-        ))}
-        {/* Palm fronds */}
-        {[0, 60, 120, 180, 240, 300].map((angle, i) => {
-          const rad = (angle * Math.PI) / 180
-          return (
-            <mesh key={`frond-${i}`}
-              position={[Math.sin(rad) * 0.25, 2.9, Math.cos(rad) * 0.25]}
-              rotation={[Math.cos(rad) * 0.8, 0, Math.sin(rad) * 0.8]}>
-              <boxGeometry args={[0.08, 0.02, 0.6]} />
-              <meshStandardMaterial color="#2a8830" roughness={0.5} emissive="#1a6820" emissiveIntensity={0.2} />
-            </mesh>
-          )
-        })}
-        {/* Smaller fronds */}
-        {[30, 90, 150, 210, 270, 330].map((angle, i) => {
-          const rad = (angle * Math.PI) / 180
-          return (
-            <mesh key={`frond2-${i}`}
-              position={[Math.sin(rad) * 0.2, 2.95, Math.cos(rad) * 0.2]}
-              rotation={[Math.cos(rad) * 0.6, 0, Math.sin(rad) * 0.6]}>
-              <boxGeometry args={[0.06, 0.015, 0.45]} />
-              <meshStandardMaterial color="#38a840" roughness={0.5} emissive="#208828" emissiveIntensity={0.15} />
-            </mesh>
-          )
-        })}
-      </group>
-
-      {/* ===== FLAG (upper left) — red/green/yellow ===== */}
-      <group position={[-3.2, 4.8, 0.8]} rotation={[0.1, 0.3, -0.1]}>
-        {/* Flag pole */}
-        <mesh position={[0, 0.4, 0]} material={wood}>
-          <cylinderGeometry args={[0.02, 0.02, 1, 12]} />
-        </mesh>
-        {/* Flag fabric — layered colored strips */}
-        <mesh position={[0.3, 0.5, 0]} material={flagRed}>
-          <boxGeometry args={[0.7, 0.55, 0.015]} />
-        </mesh>
-        <mesh position={[0.3, 0.5, 0.02]} material={flagGreen}>
-          <boxGeometry args={[0.5, 0.38, 0.01]} />
-        </mesh>
-        <mesh position={[0.3, 0.5, 0.035]} material={flagYellow}>
-          <boxGeometry args={[0.3, 0.2, 0.008]} />
-        </mesh>
-      </group>
 
 
 
@@ -1029,5 +706,41 @@ function Tassel({ x }: { x: number }) {
       <boxGeometry args={[0.012, 0.25, 0.008]} />
       <meshStandardMaterial color="#c8a030" roughness={0.35} metalness={0.65} emissive="#7a5818" emissiveIntensity={0.3} />
     </mesh>
+  )
+}
+
+/**
+ * Loads the Meshy AI pagoda GLB and places it where the procedural cung đình used to be:
+ * wrapper transform `position={[0, -0.6, 0.5]}` and `scale={[1.3, 1, 1]}`, matching the
+ * original inner cung-đình group. Uniform fit.scale matches old height (~6.05 units).
+ */
+function CungDinhModel() {
+  const { scene } = useGLTF(CUNG_DINH_URL, false, true) as unknown as { scene: THREE.Group }
+
+  const model = useMemo(() => {
+    const c = scene.clone(true)
+    c.traverse((obj) => {
+      const m = obj as THREE.Mesh
+      if (m.isMesh) { m.castShadow = true; m.receiveShadow = true }
+    })
+    return c
+  }, [scene])
+
+  const fit = useMemo(() => {
+    const bbox = new THREE.Box3().setFromObject(model)
+    const size = bbox.getSize(new THREE.Vector3())
+    const center = bbox.getCenter(new THREE.Vector3())
+    const TARGET_H = 4.5 // shrunk from 6.05 so the cung-đình takes less stage room
+    const scale = TARGET_H / size.y
+    return {
+      offset: [-center.x, -bbox.min.y, -center.z] as [number, number, number],
+      scale,
+    }
+  }, [model])
+
+  return (
+    <group position={[0, -0.2, 1.4]} scale={[fit.scale * 1.3, fit.scale, fit.scale]}>
+      <primitive object={model} position={fit.offset} />
+    </group>
   )
 }

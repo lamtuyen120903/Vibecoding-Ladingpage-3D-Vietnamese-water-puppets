@@ -95,6 +95,7 @@ function App() {
 
       {/* Music toggle */}
       <button
+        data-tour="music"
         onClick={toggleMusic}
         style={{
           position: 'fixed', bottom: 20, right: 20, zIndex: 100,
