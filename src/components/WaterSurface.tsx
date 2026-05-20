@@ -57,76 +57,59 @@ const vertexShader = `
 
 const fragmentShader = `
   uniform float uTime;
+  uniform sampler2D uVideo;
   varying vec2 vUv;
   varying float vWaveHeight;
-
-  float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-  float noise(vec2 p){
-    vec2 i=floor(p);vec2 f=fract(p);f=f*f*(3.0-2.0*f);
-    return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);
-  }
 
   void main() {
     float t = uTime;
     vec2 uv = vUv;
 
-    // Bright teal-turquoise water base — vivid & luminous
-    vec3 green = vec3(0.22, 0.65, 0.62);
-    vec3 greenLight = vec3(0.35, 0.78, 0.75);
-    vec3 greenDark = vec3(0.12, 0.48, 0.50);
+    // Liquid distortion — wobble the video sampling so it reads as moving water
+    uv.x += sin(uv.y * 14.0 + t * 0.8) * 0.007;
+    uv.y += sin(uv.x * 12.0 + t * 0.6) * 0.007;
+    uv += vWaveHeight * 0.6; // refract along the wave crests/ripples
 
-    // Gradient: lighter in center, darker at edges
-    float cx = smoothstep(0.0, 0.35, uv.x) * smoothstep(1.0, 0.65, uv.x);
-    float cy = smoothstep(0.0, 0.3, uv.y) * smoothstep(1.0, 0.7, uv.y);
-    float center = cx * cy;
+    vec3 col = texture2D(uVideo, uv).rgb;
 
-    vec3 col = mix(greenDark, green, center * 0.8);
-    col = mix(col, greenLight, center * 0.4);
+    // Wave crest highlight from the vertex displacement (waves + puppet ripples)
+    col += vec3(0.4, 0.55, 0.5) * smoothstep(0.0, 0.03, vWaveHeight) * 0.35;
 
-    // Warm golden reflection from roof (upper part)
-    float roofReflect = smoothstep(0.55, 0.95, uv.y) * 0.2;
-    col += vec3(0.3, 0.2, 0.08) * roofReflect;
-
-    // Warm center glow from stage lighting — stronger
-    float sd = length((uv - vec2(0.5, 0.6)) * vec2(1.0, 1.3));
-    float sr = smoothstep(0.5, 0.0, sd) * 0.3;
-    float distort = sin(uv.x * 12.0 + t * 0.4) * sin(uv.y * 10.0 + t * 0.3) * 0.25;
-    sr *= (0.8 + distort);
-    col += vec3(0.35, 0.55, 0.48) * sr;
-
-    // Caustics — brighter teal-white shimmer
-    float c1 = noise(uv * 18.0 + t * vec2(0.2, 0.15));
-    float c2 = noise(uv * 12.0 - t * vec2(0.15, 0.2) + 5.0);
-    float cs = smoothstep(0.15, 0.5, c1 * c2);
-    col += vec3(0.25, 0.4, 0.35) * cs * center * 0.6;
-
-    // White highlights/shimmer spots — brighter
-    float sh = pow(noise(uv * 25.0 + t * vec2(0.3, -0.2)), 3.0) * 0.35 * center;
-    col += vec3(0.85, 0.95, 0.9) * sh;
-
-    // Wave crest highlights — more visible
-    col += vec3(0.35, 0.55, 0.5) * smoothstep(0.0, 0.03, vWaveHeight) * 0.35;
-
-    // Lily pad / white spots (static circles on water)
-    float lp1 = smoothstep(0.025, 0.015, length(uv - vec2(0.35, 0.4)));
-    float lp2 = smoothstep(0.02, 0.012, length(uv - vec2(0.6, 0.35)));
-    float lp3 = smoothstep(0.018, 0.01, length(uv - vec2(0.5, 0.55)));
-    col += vec3(0.6, 0.7, 0.65) * (lp1 + lp2 + lp3) * 0.4;
-
-    float edge = smoothstep(0.0, 0.06, uv.y) * smoothstep(1.0, 0.94, uv.y) * smoothstep(0.0, 0.04, uv.x) * smoothstep(1.0, 0.96, uv.x);
-    gl_FragColor = vec4(col, 0.94 * edge);
+    // Edge fade so the water blends into the pool border
+    float edge = smoothstep(0.0, 0.06, vUv.y) * smoothstep(1.0, 0.94, vUv.y)
+               * smoothstep(0.0, 0.04, vUv.x) * smoothstep(1.0, 0.96, vUv.x);
+    gl_FragColor = vec4(col, 0.98 * edge);
   }
 `
 
 export default function WaterSurface() {
   const ref = useRef<THREE.Mesh>(null)
+
+  // Looping muted video used as the water-surface texture
+  const videoTexture = useMemo(() => {
+    const video = document.createElement('video')
+    video.src = '/water.mov'
+    video.loop = true
+    video.muted = true
+    video.playsInline = true
+    video.autoplay = true
+    video.crossOrigin = 'anonymous'
+    video.play().catch(() => {})
+    const tex = new THREE.VideoTexture(video)
+    tex.colorSpace = THREE.SRGBColorSpace
+    tex.minFilter = THREE.LinearFilter
+    tex.magFilter = THREE.LinearFilter
+    return tex
+  }, [])
+
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
+    uVideo: { value: videoTexture },
     uRipplePos1: { value: new THREE.Vector3(0, -0.5, 0) },
     uRipplePos2: { value: new THREE.Vector3(1.5, -0.5, -1) },
     uRipplePos3: { value: new THREE.Vector3(-1.5, -0.5, -1) },
     uRippleStrength: { value: 0.0 },
-  }), [])
+  }), [videoTexture])
 
   // Animate ripple strength for puppet emergence effect
   useFrame(({ clock }) => {
@@ -212,9 +195,10 @@ export default function WaterSurface() {
         <boxGeometry args={[0.16, 0.03, poolD + 0.3]} />
       </mesh>
 
-      {/* Dark floor around the pool */}
+      {/* Dark floor around the pool — width trimmed to the outer edge of the
+          musician platforms (x ≈ ±5.55) so it doesn't stick out past them. */}
       <mesh position={[0, poolY - 0.02, 2]} rotation={[-Math.PI / 2, 0, 0]} material={darkFloor} receiveShadow>
-        <planeGeometry args={[20, 16]} />
+        <planeGeometry args={[11.1, 16]} />
       </mesh>
     </group>
   )

@@ -7,10 +7,6 @@ import * as THREE from 'three'
 const MODEL_URL = '/puppet-girl.glb'
 useGLTF.preload(MODEL_URL, false, true)
 
-// Stretch the intro choreography (originally 5s) → ~7s for all puppets.
-const PERFORM_TIME_SCALE = 1.4
-const PERFORM_DURATION_MS = 5000 * PERFORM_TIME_SCALE // 7000 ms
-
 export interface PuppetConfig {
   id: string
   position: [number, number, number]
@@ -38,10 +34,8 @@ interface Props {
 export default function Puppet({ config, highlighted, onClick, onHover }: Props) {
   const groupRef = useRef<THREE.Group>(null)
   const [hovered, setHovered] = useState(false)
-  const [performing, setPerforming] = useState(false)
-  const performStartRef = useRef(0)
 
-  const glow = highlighted || hovered || performing
+  const glow = highlighted || hovered
 
   // === Load + clone GLB model (skinned mesh requires SkeletonUtils.clone) ===
   const { scene, animations } = useGLTF(MODEL_URL, false, true) as unknown as {
@@ -76,12 +70,12 @@ export default function Puppet({ config, highlighted, onClick, onHover }: Props)
     }
   }, [actions, config.animationSpeed, config.animationOffset])
 
-  // Speed up animation when puppet is glowing/performing for extra liveliness
+  // Speed up animation when puppet is glowing (hovered/highlighted) for extra liveliness
   useEffect(() => {
     const clip = Object.values(actions)[0]
     if (!clip) return
-    clip.timeScale = config.animationSpeed * (performing ? 1.6 : glow ? 1.2 : 1)
-  }, [glow, performing, actions, config.animationSpeed])
+    clip.timeScale = config.animationSpeed * (glow ? 1.2 : 1)
+  }, [glow, actions, config.animationSpeed])
 
   // === Materials — apply glow tint to the model when hovered/highlighted ===
   const baseMat = useMemo(() => new THREE.MeshStandardMaterial({
@@ -127,64 +121,6 @@ export default function Puppet({ config, highlighted, onClick, onHover }: Props)
     const t = elapsed * config.animationSpeed + config.animationOffset
     const g = groupRef.current
 
-    // === PERFORMANCE khi click — màn giới thiệu cho mọi con rối (slowed ×PERFORM_TIME_SCALE) ===
-    if (performing) {
-      if (performStartRef.current < 0) performStartRef.current = elapsed
-      // Stretch the original 5s intro choreography to PERFORM_DURATION seconds.
-      const ptRaw = elapsed - performStartRef.current
-      const pt = ptRaw / PERFORM_TIME_SCALE
-      const baseY = config.position[1]
-      const baseX = config.position[0]
-
-      if (pt < 1.2) {
-        const rise = Math.min(pt / 1.0, 1)
-        const eased = rise * rise * (3 - 2 * rise)
-        g.position.y = baseY - 0.5 + eased * 0.5
-        g.position.x = baseX
-        g.rotation.set(0, 0, 0)
-        g.rotation.z = Math.sin(pt * 8) * 0.02 * (1 - eased)
-      }
-      else if (pt < 2.8) {
-        const p2 = pt - 1.2
-        g.position.x = baseX
-        g.rotation.z = 0
-        let dip = 0
-        if (p2 < 0.3) { dip = (p2 / 0.3) * 0.08 }
-        else if (p2 < 0.5) { dip = 0.08 }
-        else if (p2 < 0.9) { dip = 0.08 + ((p2 - 0.5) / 0.4) * 0.12 }
-        else if (p2 < 1.2) { dip = 0.2 }
-        else { const up = Math.min((p2 - 1.2) / 0.4, 1); dip = 0.2 * (1 - up * up) }
-        g.position.y = baseY - dip
-        g.rotation.x = dip * 1.2
-      }
-      else if (pt < 3.8) {
-        const p3 = pt - 2.8
-        g.position.x = baseX; g.position.y = baseY; g.rotation.x = 0
-        if (p3 < 0.2) { g.rotation.y = -(p3 / 0.2) * 0.26 }
-        else if (p3 < 0.4) { g.rotation.y = -0.26 }
-        else if (p3 < 0.6) { g.rotation.y = -0.26 + ((p3 - 0.4) / 0.2) * 0.52 }
-        else if (p3 < 0.8) { g.rotation.y = 0.26 }
-        else { g.rotation.y = 0.26 * (1 - Math.min((p3 - 0.8) / 0.2, 1)) }
-      }
-      else if (pt < 4.6) {
-        const p4 = pt - 3.8
-        g.position.x = baseX; g.position.y = baseY; g.rotation.set(0, 0, 0)
-        g.rotation.z = Math.sin(p4 * 20) * 0.08
-      }
-      else {
-        const p5 = pt - 4.6
-        g.position.x = baseX
-        g.position.y = baseY + Math.sin(p5 * 3) * 0.015
-        g.rotation.x = 0
-        g.rotation.y = Math.sin(p5 * 1.5) * 0.04
-        g.rotation.z = Math.sin(p5 * 2) * 0.015
-      }
-
-      const performScale = config.scale * 1.15
-      g.scale.lerp(new THREE.Vector3(performScale, performScale, performScale), 0.08)
-      return
-    }
-
     // === NORMAL IDLE — water bob + gentle sway (model has its own arm animation) ===
     const anim = config.animation
     g.position.y = config.position[1] + Math.sin(t * 0.6) * 0.03
@@ -225,15 +161,8 @@ export default function Puppet({ config, highlighted, onClick, onHover }: Props)
 
   const handleClick = useCallback((e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation()
-    if (performing) return
-    setPerforming(true)
-    performStartRef.current = -1
-
-    setTimeout(() => {
-      setPerforming(false)
-      onClick?.()
-    }, PERFORM_DURATION_MS)
-  }, [performing, onClick])
+    onClick?.()
+  }, [onClick])
 
   return (
     <group

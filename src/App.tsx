@@ -5,7 +5,7 @@ import ProjectDetailModal from './components/ProjectDetailModal'
 import type { Project } from './data/projects'
 import './App.css'
 
-export type ActId = 'intro' | 'automation' | 'ai'
+export type ActId = 'intro' | 'automation' | 'vibecoding' | 'video'
 export type StagePhase = 'opening' | 'performing'
 
 function App() {
@@ -72,6 +72,15 @@ function App() {
 
   return (
     <div className="stage-container">
+      <video
+        className="bg-video"
+        src="/bg-video.mp4"
+        autoPlay
+        loop
+        muted
+        playsInline
+      />
+
       <PuppetStage
         currentAct={currentAct}
         phase={phase}
@@ -96,15 +105,8 @@ function App() {
       {/* Music toggle */}
       <button
         data-tour="music"
+        className="stage-music-btn"
         onClick={toggleMusic}
-        style={{
-          position: 'fixed', bottom: 20, right: 20, zIndex: 100,
-          width: 44, height: 44, borderRadius: '50%',
-          background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)',
-          color: '#f0e0c0', fontSize: 20, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          backdropFilter: 'blur(8px)',
-        }}
         title={musicPlaying ? 'Tắt nhạc' : 'Bật nhạc'}
       >
         {musicPlaying ? '\u266B' : '\u266A'}

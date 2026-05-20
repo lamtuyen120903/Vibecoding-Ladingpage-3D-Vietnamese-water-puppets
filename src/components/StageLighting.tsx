@@ -10,7 +10,8 @@ interface Props {
 const actColors: Record<ActId, { ambient: number; dirIntensity: number }> = {
   intro: { ambient: 1.0, dirIntensity: 1.8 },
   automation: { ambient: 1.05, dirIntensity: 1.9 },
-  ai: { ambient: 1.1, dirIntensity: 2.0 },
+  vibecoding: { ambient: 1.1, dirIntensity: 2.0 },
+  video: { ambient: 1.15, dirIntensity: 2.1 },
 }
 
 export default function StageLighting({ currentAct }: Props) {

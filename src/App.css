@@ -3,8 +3,26 @@
   height: 100vh;
   overflow: hidden;
   position: relative;
-  background: #f5ead4;
+  background: #000;
   cursor: default;
+}
+
+.bg-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  pointer-events: none;
+  background: #000;
+}
+
+.stage-container > canvas {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
 }
 
 /* Opening overlay */
@@ -29,31 +47,31 @@
 }
 
 .opening-title {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 5rem;
+  font-family: var(--font-display);
+  font-size: var(--text-hero);
   font-weight: 700;
-  color: #ffd860;
+  color: var(--color-text);
   text-shadow: 0 0 40px rgba(255, 200, 60, 0.7), 0 0 80px rgba(200, 140, 30, 0.4), 0 3px 10px rgba(0,0,0,0.9);
   margin: 0;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--tracking-wider);
 }
 
 .opening-subtitle {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.8rem;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
   font-weight: 400;
   font-style: italic;
-  color: #f0d070;
-  margin: 0.8rem 0 2rem;
+  color: var(--color-text);
+  margin: 0.75rem 0 2rem;
   text-shadow: 0 0 20px rgba(240, 200, 80, 0.5), 0 2px 6px rgba(0,0,0,0.9);
 }
 
 .opening-desc {
-  font-family: 'Inter', sans-serif;
-  font-size: 1rem;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
   font-weight: 400;
-  color: #e0c880;
-  letter-spacing: 0.2em;
+  color: var(--color-text);
+  letter-spacing: var(--tracking-widest);
   text-transform: uppercase;
   margin: 0;
   text-shadow: 0 0 15px rgba(200, 160, 60, 0.4), 0 1px 4px rgba(0,0,0,0.9);
@@ -62,15 +80,15 @@
 .opening-skip {
   position: absolute;
   bottom: 3rem;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
-  color: #e0c880;
-  letter-spacing: 0.12em;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  letter-spacing: var(--tracking-wider);
   text-shadow: 0 0 10px rgba(200, 160, 60, 0.5), 0 1px 4px rgba(0,0,0,0.8);
   animation: pulse 2s ease-in-out infinite;
   border: 1px solid rgba(200, 160, 60, 0.3);
   padding: 0.5rem 1.5rem;
-  border-radius: 4px;
+  border-radius: var(--btn-radius);
 }
 
 @keyframes fadeInUp {
@@ -81,4 +99,62 @@
 @keyframes pulse {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 0.8; }
+}
+
+/* Music toggle button */
+.stage-music-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--color-text);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+}
+
+/* ====== Responsive — màn hình mở đầu ====== */
+@media (max-width: 768px) {
+  .opening-text {
+    padding: 2rem 2.5rem;
+    border-radius: 28px;
+  }
+  .opening-title { font-size: 3rem; }
+  .opening-subtitle { font-size: 1.3rem; }
+  .opening-desc { font-size: 0.8rem; }
+  .opening-skip { bottom: 2rem; }
+}
+
+@media (max-width: 480px) {
+  .opening-text {
+    padding: 1.5rem 1.25rem;
+    border-radius: 20px;
+  }
+  .opening-title {
+    font-size: 2.1rem;
+    letter-spacing: 0.05em;
+  }
+  .opening-subtitle { font-size: 1rem; }
+  .opening-desc {
+    font-size: 0.68rem;
+    letter-spacing: var(--tracking-wider);
+  }
+  .opening-skip { bottom: 1.5rem; }
+
+  /* Nút nhạc nhỏ lại + sát mép hơn trên điện thoại */
+  .stage-music-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 17px;
+    bottom: 12px;
+    right: 12px;
+  }
 }

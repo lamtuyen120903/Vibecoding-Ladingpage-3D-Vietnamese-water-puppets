@@ -13,11 +13,60 @@ const WAYPOINTS = {
   performing: new THREE.Vector3(0, 2.2, 9),
 }
 
+// Scene was framed for a 16:9 viewport with a 56° vertical FOV.
+const BASE_FOV = 56
+const BASE_ASPECT = 16 / 9
+const DEG = Math.PI / 180
+
 export default function CinematicCamera({ phase }: CinematicCameraProps) {
   const controlsRef = useRef<any>(null)
-  const { camera } = useThree()
+  const { camera, size } = useThree()
   const targetPosition = useRef(new THREE.Vector3(0, 2.2, 9))
   const currentPosition = useRef(new THREE.Vector3(0, 2.2, 9))
+
+  // Responsive framing — "contain" fit: GUARANTEE the whole scene stays in
+  // frame at EVERY aspect ratio, so không component 3D nào (sân khấu, rối, ghế
+  // khán giả hai bên) bị cắt dù màn hình rộng, hẹp hay dọc.
+  //
+  // Cảnh được dàn cho khung 16:9 với FOV dọc 56° → suy ra FOV ngang gốc.
+  //  • baseVFov  = bề cao cảnh cần thấy (56°).
+  //  • vFovForWidth = FOV dọc cần thiết để giữ TRỌN bề ngang cảnh ở tỉ lệ hiện tại.
+  // Lấy max() của hai giá trị → FOV luôn đủ lớn để KHÔNG cắt cả trên/dưới lẫn
+  // hai bên:
+  //  • Màn rộng (ultrawide): baseVFov thắng → giữ nguyên trên/dưới, dư bề ngang.
+  //  • Màn hẹp/dọc (điện thoại): vFovForWidth thắng → "lùi tầm nhìn" cho đủ bề
+  //    ngang, ghế + rối hai bên vẫn nằm trong khung.
+  useEffect(() => {
+    const cam = camera as THREE.PerspectiveCamera
+    const aspect = size.width / size.height
+    const baseHFov = 2 * Math.atan(Math.tan((BASE_FOV * DEG) / 2) * BASE_ASPECT)
+    const vFovForWidth = 2 * Math.atan(Math.tan(baseHFov / 2) / aspect)
+    // Trần 110° đủ rộng cho cả màn dọc cực hẹp; vẫn kẹp để tránh méo quá mức.
+    const fovDeg = THREE.MathUtils.clamp(
+      Math.max(BASE_FOV, THREE.MathUtils.radToDeg(vFovForWidth)),
+      20,
+      110,
+    )
+    cam.fov = fovDeg
+    cam.updateProjectionMatrix()
+
+    // Lens shift dọc (off-axis) — CHỈ khi phải mở rộng FOV (màn hẹp/dọc).
+    // Camera GIỮ NGUYÊN vị trí & hướng nhìn (không lùi, không xoay). Ta chỉ neo
+    // mép DƯỚI của khung vào đúng vạch đáy của khung 16:9 gốc → hàng ghế luôn
+    // nằm sát mép dưới; toàn bộ phần FOV dư dồn lên TRÊN (trời) thay vì tạo
+    // khoảng đen bên dưới ghế.
+    if (fovDeg > BASE_FOV + 0.01) {
+      const halfBase = Math.tan((BASE_FOV * DEG) / 2)
+      const halfNow = Math.tan((fovDeg * DEG) / 2)
+      // elements[9] = (top+bottom)/(top-bottom): >0 → dịch khung lên, dồn cảnh
+      // xuống cho mép dưới khít vạch đáy khung gốc.
+      cam.projectionMatrix.elements[9] = 1 - halfBase / halfNow
+      // QUAN TRỌNG: vá xong phải đồng bộ ma trận nghịch đảo, nếu không Raycaster
+      // (dùng projectionMatrixInverse để bắn tia từ con trỏ) sẽ lệch với ảnh
+      // render off-axis → click trượt con rối khi màn hình hẹp/dọc.
+      cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert()
+    }
+  }, [camera, size])
 
   // Update target when phase changes
   useEffect(() => {

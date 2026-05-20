@@ -8,9 +8,17 @@ interface Props {
 }
 
 const categoryLabels: Record<string, string> = {
-  analysis: 'Analysis',
+  intro: 'Giới thiệu',
   automation: 'Automation',
-  ai: 'AI',
+  vibecoding: 'Vibe Coding',
+  video: 'Video AI / Edit Video',
+}
+
+// Nhãn nút mở link tùy theo loại màn
+const linkLabels: Record<string, string> = {
+  automation: 'Xem trên GitHub →',
+  vibecoding: 'Xem trên GitHub →',
+  video: 'Xem video →',
 }
 
 export default function ProjectDetailModal({ project, onClose }: Props) {
@@ -48,36 +56,47 @@ export default function ProjectDetailModal({ project, onClose }: Props) {
               <p className="pdm-short">{project.shortDescription}</p>
             </div>
 
-            {/* Media gallery */}
+            {/* Media gallery — bỏ qua với màn video (chỉ hiện player) và project chưa có ảnh */}
+            {project.category !== 'video' && project.images.length > 0 && (
             <div className="pdm-gallery">
-              {project.images.length > 0 ? (
-                project.images.map((img, i) => (
-                  <div key={i} className="pdm-gallery-item">
-                    <div className="pdm-gallery-placeholder">
-                      <span className="pdm-gallery-icon">&#9670;</span>
-                      <span className="pdm-gallery-label">Hinh {i + 1}</span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="pdm-gallery-item">
+              {project.images.map((img, i) => (
+                <div key={i} className="pdm-gallery-item">
                   <div className="pdm-gallery-placeholder">
                     <span className="pdm-gallery-icon">&#9670;</span>
-                    <span className="pdm-gallery-label">Chua co hinh</span>
+                    <span className="pdm-gallery-label">Hinh {i + 1}</span>
                   </div>
+                  <img
+                    className="pdm-gallery-img"
+                    src={img}
+                    alt={`${project.title} ${i + 1}`}
+                    loading="lazy"
+                    onError={(e) => { e.currentTarget.style.display = 'none' }}
+                  />
                 </div>
-              )}
+              ))}
             </div>
+            )}
 
             {/* Video section */}
-            {project.videos.length > 0 && (
+            {project.driveFileId ? (
+              <div className="pdm-video-section">
+                <div className="pdm-video-embed">
+                  <iframe
+                    src={`https://drive.google.com/file/d/${project.driveFileId}/preview?autoplay=1`}
+                    title={project.title}
+                    allow="autoplay; fullscreen"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            ) : project.videos.length > 0 ? (
               <div className="pdm-video-section">
                 <div className="pdm-video-placeholder">
                   <span className="pdm-gallery-icon">&#9654;</span>
                   <span className="pdm-gallery-label">Video demo</span>
                 </div>
               </div>
-            )}
+            ) : null}
 
             {/* Story / Case study */}
             <div className="pdm-story">
@@ -88,7 +107,7 @@ export default function ProjectDetailModal({ project, onClose }: Props) {
 
             {/* Tech stack */}
             <div className="pdm-tech">
-              <h4 className="pdm-tech-label">Cong cu su dung</h4>
+              <h4 className="pdm-tech-label">Công cụ sử dụng</h4>
               <div className="pdm-tech-list">
                 {project.tools.map((tool) => (
                   <span key={tool} className="pdm-tech-item">{tool}</span>
@@ -96,20 +115,57 @@ export default function ProjectDetailModal({ project, onClose }: Props) {
               </div>
             </div>
 
+            {/* Contact */}
+            {project.contact && (
+              <div className="pdm-contact">
+                <h4 className="pdm-tech-label">Lien he</h4>
+                <div className="pdm-contact-list">
+                  {project.contact.linkedin && (
+                    <a className="pdm-contact-item" href={project.contact.linkedin} target="_blank" rel="noopener noreferrer">
+                      <span className="pdm-contact-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+                      </span> LinkedIn
+                    </a>
+                  )}
+                  {project.contact.github && (
+                    <a className="pdm-contact-item" href={project.contact.github} target="_blank" rel="noopener noreferrer">
+                      <span className="pdm-contact-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.29-.01-1.04-.02-2.05-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.96 0-1.32.47-2.39 1.24-3.23-.12-.31-.54-1.53.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6.01 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.65.24 2.87.12 3.18.77.84 1.24 1.91 1.24 3.23 0 4.63-2.81 5.65-5.49 5.95.43.37.81 1.1.81 2.22 0 1.6-.01 2.89-.01 3.29 0 .32.22.7.83.58A12.01 12.01 0 0 0 24 12.5C24 5.87 18.63.5 12 .5z"/></svg>
+                      </span> GitHub
+                    </a>
+                  )}
+                  {project.contact.email && (
+                    <a className="pdm-contact-item" href={`mailto:${project.contact.email}`}>
+                      <span className="pdm-contact-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                      </span> {project.contact.email}
+                    </a>
+                  )}
+                  {project.contact.phone && (
+                    <a className="pdm-contact-item" href={`tel:${project.contact.phone.replace(/\s/g, '')}`}>
+                      <span className="pdm-contact-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.62 10.79a15.53 15.53 0 0 0 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.07 21 3 13.93 3 5c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.24.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                      </span> {project.contact.phone}
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Actions */}
             <div className="pdm-actions">
-              {project.websiteUrl && (
+              {project.websiteUrl && project.category !== 'video' && (
                 <a
                   href={project.websiteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="pdm-btn pdm-btn--primary"
                 >
-                  Xem website demo &#8594;
+                  {linkLabels[project.category] ?? 'Xem website demo →'}
                 </a>
               )}
               <button className="pdm-btn pdm-btn--secondary" onClick={onClose}>
-                Quay lai san khau
+                Quay lại sân khấu
               </button>
             </div>
           </motion.div>

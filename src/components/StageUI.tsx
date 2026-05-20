@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ActId } from '../App'
 import { projects } from '../data/projects'
 import './StageUI.css'
@@ -11,7 +11,7 @@ interface Props {
 
 const guideItems: { icon: string; text: string }[] = [
   { icon: '🪆', text: 'Click vào con rối để xem chi tiết dự án' },
-  { icon: '🎭', text: 'Chọn màn diễn ở thanh trên cùng (Giới thiệu / Automation / Vibe Coding)' },
+  { icon: '🎭', text: 'Chọn màn diễn ở thanh trên cùng (Giới thiệu / Automation / Vibe Coding / Video AI)' },
   { icon: '✨', text: 'Di chuột lên rối để thấy tên dự án' },
   { icon: '♫', text: 'Nút nhạc ở góc dưới phải để bật/tắt nhạc nền' },
   { icon: '⎋', text: 'Bấm vùng tối ngoài cửa sổ dự án để đóng' },
@@ -33,13 +33,13 @@ const tutorialSteps: TourStep[] = [
   },
   {
     title: 'Chọn màn diễn',
-    body: 'Thanh trên cùng có 3 màn: Giới thiệu, Automation, Vibe Coding. Bấm để chuyển — mỗi màn hiện một nhóm con rối / dự án khác nhau.',
+    body: 'Thanh trên cùng có 4 màn: Giới thiệu, Automation, Vibe Coding, Video AI. Bấm để chuyển — mỗi màn hiện một nhóm con rối / dự án khác nhau.',
     target: '.stage-ui-acts',
     placement: 'bottom',
   },
   {
     title: 'Tương tác với rối',
-    body: 'Trên sân khấu — di chuột lên 1 con rối sẽ thấy tên dự án; bấm vào con rối → rối múa ~7s rồi cửa sổ dự án mở ra.',
+    body: 'Trên sân khấu — di chuột lên 1 con rối sẽ thấy tên dự án; bấm vào con rối → cửa sổ dự án mở ra ngay.',
     placement: 'center',
   },
   {
@@ -59,18 +59,19 @@ const tutorialSteps: TourStep[] = [
 const acts: { id: ActId; label: string; sub: string }[] = [
   { id: 'intro', label: 'Màn', sub: 'Giới thiệu' },
   { id: 'automation', label: 'Màn', sub: 'Automation' },
-  { id: 'ai', label: 'Màn', sub: 'Vibe Coding' },
+  { id: 'vibecoding', label: 'Màn', sub: 'Vibe Coding' },
+  { id: 'video', label: 'Màn', sub: 'Video AI / Edit Video' },
 ]
 
 export default function StageUI({ currentAct, onActChange, hoveredPuppet }: Props) {
-  // Auto-start the interactive tour the moment the stage UI mounts (i.e. when the user
-  // lands on the performing phase after the opening sequence).
+  // Tour is opt-in (launched from the guide's Tutorial tab) so it never blocks
+  // the user from clicking puppets right away.
   const [guideOpen, setGuideOpen] = useState(false)
   const [guideTab, setGuideTab] = useState<'controls' | 'tutorial'>('controls')
-  const [tourActive, setTourActive] = useState(true)
+  const [tourActive, setTourActive] = useState(false)
   const [tourStep, setTourStep] = useState(0)
   const hoveredProject = hoveredPuppet
-    ? projects.find(p => p.id === hoveredPuppet) || (hoveredPuppet === 'intro-personal' ? { title: 'Gioi thieu ca nhan', shortDescription: 'Click de xem' } : null)
+    ? projects.find(p => p.id === hoveredPuppet) || (hoveredPuppet === 'intro-personal' ? { title: 'Giới thiệu cá nhân', shortDescription: 'Click để xem' } : null)
     : null
 
   const startTour = () => {
@@ -92,7 +93,7 @@ export default function StageUI({ currentAct, onActChange, hoveredPuppet }: Prop
     <>
       {/* Act selector — top center */}
       <div className="stage-ui-acts">
-        <span className="stage-ui-label">Chon man dien</span>
+        <span className="stage-ui-label">Chọn màn diễn</span>
         <div className="stage-ui-act-buttons">
           {acts.map(act => (
             <button
@@ -112,7 +113,7 @@ export default function StageUI({ currentAct, onActChange, hoveredPuppet }: Prop
         <div className="stage-ui-tooltip">
           <span className="stage-ui-tooltip-title">{hoveredProject.title}</span>
           <span className="stage-ui-tooltip-desc">{hoveredProject.shortDescription}</span>
-          <span className="stage-ui-tooltip-cue">Click de xem chi tiet</span>
+          <span className="stage-ui-tooltip-cue">Click để xem chi tiết</span>
         </div>
       )}
 
@@ -195,6 +196,10 @@ interface TourOverlayProps {
 
 function TourOverlay({ step, stepIndex, total, onPrev, onNext, onSkip }: TourOverlayProps) {
   const [rect, setRect] = useState<DOMRect | null>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+  // Real card dimensions — measured from the DOM so placement stays correct on
+  // every screen size (the card width changes via CSS clamp / media queries).
+  const [cardSize, setCardSize] = useState({ w: 360, h: 240 })
 
   useLayoutEffect(() => {
     if (!step.target) { setRect(null); return }
@@ -213,9 +218,28 @@ function TourOverlay({ step, stepIndex, total, onPrev, onNext, onSkip }: TourOve
     }
   }, [step.target])
 
+  // Measure the actual rendered card so we never position it with a guessed size.
+  useLayoutEffect(() => {
+    const el = cardRef.current
+    if (!el) return
+    const measure = () => {
+      const r = el.getBoundingClientRect()
+      setCardSize(prev =>
+        Math.abs(prev.w - r.width) > 1 || Math.abs(prev.h - r.height) > 1
+          ? { w: r.width, h: r.height }
+          : prev,
+      )
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    window.addEventListener('resize', measure)
+    return () => { ro.disconnect(); window.removeEventListener('resize', measure) }
+  }, [step])
+
   // Compute card placement
   const placement: Placement = step.placement ?? (rect ? 'bottom' : 'center')
-  const cardStyle = computeCardStyle(rect, placement)
+  const cardStyle = computeCardStyle(rect, placement, cardSize.w, cardSize.h)
   const ringStyle = rect ? {
     top: rect.top - 8,
     left: rect.left - 8,
@@ -247,7 +271,7 @@ function TourOverlay({ step, stepIndex, total, onPrev, onNext, onSkip }: TourOve
         <div className="tour-mask tour-mask--full" />
       )}
       {ringStyle && <div className="tour-ring" style={ringStyle} />}
-      <div className={`tour-card tour-card--${placement}`} style={cardStyle}>
+      <div ref={cardRef} className={`tour-card tour-card--${placement}`} style={cardStyle}>
         <div className="tour-card-step">Bước {stepIndex + 1} / {total}</div>
         <div className="tour-card-title">{step.title}</div>
         <div className="tour-card-body">{step.body}</div>
@@ -263,16 +287,13 @@ function TourOverlay({ step, stepIndex, total, onPrev, onNext, onSkip }: TourOve
   )
 }
 
-function computeCardStyle(rect: DOMRect | null, placement: Placement): React.CSSProperties {
+function computeCardStyle(rect: DOMRect | null, placement: Placement, cardW = 360, cardH = 240): React.CSSProperties {
   if (!rect || placement === 'center') {
     return {
       top: '50%', left: '50%',
       transform: 'translate(-50%, -50%)',
     }
   }
-  // Estimate card dims — must match .tour-card max width and roughly its height.
-  const cardW = 360
-  const cardH = 240
   const margin = 16
   const edge = 16 // viewport edge gap
   const vw = window.innerWidth

@@ -11,9 +11,34 @@
   --color-soft-cream: #e8dcc8;
   --color-mist: rgba(232, 220, 200, 0.04);
 
-  /* Typography */
+  /* Typography — 2 fonts only */
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body: 'Inter', -apple-system, sans-serif;
+
+  /* Single text color for the whole site */
+  --color-text: #f0c04a;
+
+  /* Type scale — change a value here to resize everywhere */
+  --text-2xs: 0.6rem;
+  --text-xs: 0.72rem;
+  --text-sm: 0.85rem;
+  --text-base: 1rem;
+  --text-md: 1.15rem;
+  --text-lg: 1.6rem;
+  --text-xl: 2.4rem;
+  --text-hero: 5rem;
+
+  /* Standard button corner radius */
+  --btn-radius: 30px;
+
+  /* Letter-spacing scale — dùng chung cho mọi chữ */
+  --tracking-normal: 0.04em;
+  --tracking-wide: 0.08em;
+  --tracking-wider: 0.12em;
+  --tracking-widest: 0.2em;
+
+  /* Spacing: tất cả padding/margin/gap là bội số của 4px
+     (rem chẵn: 0.25=4 · 0.5=8 · 0.75=12 · 1=16 · 1.25=20 · 1.5=24 · 2=32) */
 }
 
 * {
@@ -29,7 +54,7 @@ html {
 body {
   font-family: var(--font-body);
   background: #f5ead4;
-  color: var(--color-warm-cream);
+  color: var(--color-text);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
