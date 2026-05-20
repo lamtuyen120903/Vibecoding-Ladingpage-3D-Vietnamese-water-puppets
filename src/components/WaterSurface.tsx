@@ -196,9 +196,13 @@ export default function WaterSurface() {
       </mesh>
 
       {/* Dark floor around the pool — width trimmed to the outer edge of the
-          musician platforms (x ≈ ±5.55) so it doesn't stick out past them. */}
-      <mesh position={[0, poolY - 0.02, 2]} rotation={[-Math.PI / 2, 0, 0]} material={darkFloor} receiveShadow>
-        <planeGeometry args={[11.1, 16]} />
+          musician platforms (x ≈ ±5.55) so it doesn't stick out past them.
+          Chiều sâu cắt để mép TRƯỚC dừng SÁT MÉP hàng ghế trước (z ≈ 6.4): toàn
+          bộ phía camera để TRỐNG → lộ ảnh nền (bg-video) sau canvas trong suốt,
+          thay vì mảng sàn đen kéo dài xuống đáy màn hình.
+          Sâu 11.8, tâm z = -0.1 → trải z ∈ [-6, 5.8]. */}
+      <mesh position={[0, poolY - 0.02, -0.1]} rotation={[-Math.PI / 2, 0, 0]} material={darkFloor} receiveShadow>
+        <planeGeometry args={[11.1, 11.8]} />
       </mesh>
     </group>
   )

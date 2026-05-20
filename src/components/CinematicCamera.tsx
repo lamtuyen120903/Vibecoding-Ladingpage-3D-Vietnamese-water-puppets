@@ -52,19 +52,10 @@ export default function CinematicCamera({ phase }: CinematicCameraProps) {
     )
     cam.fov = fovDeg
     cam.updateProjectionMatrix()
-
-    // Lens shift dọc (off-axis) — CHỈ khi phải mở rộng FOV (màn hẹp/dọc). Neo
-    // mép DƯỚI của khung vào đúng vạch đáy khung 16:9 gốc → ghế khán giả luôn
-    // nằm sát mép dưới; phần FOV dư dồn lên TRÊN (trời) thay vì tạo khoảng đen.
-    if (fovDeg > BASE_FOV + 0.01) {
-      const halfBase = Math.tan((BASE_FOV * DEG) / 2)
-      const halfNow = Math.tan((fovDeg * DEG) / 2)
-      cam.projectionMatrix.elements[9] = 1 - halfBase / halfNow
-      // QUAN TRỌNG: vá xong phải đồng bộ ma trận nghịch đảo, nếu không Raycaster
-      // (dùng projectionMatrixInverse để bắn tia từ con trỏ) sẽ lệch với ảnh
-      // render off-axis → click trượt con rối khi màn hình hẹp/dọc.
-      cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert()
-    }
+    // KHÔNG neo đáy (off-axis): FOV giãn ĐỐI XỨNG quanh điểm ngắm STAGE_FOCUS →
+    // trên màn hẹp/dọc, phần FOV dư chia đều trên–dưới nên sân khấu + con rối
+    // nằm GIỮA màn hình. Màn ngang (≥16:9) không đổi vì fovDeg = BASE_FOV.
+    // updateProjectionMatrix() đã tự đồng bộ projectionMatrixInverse → click rối khớp.
   }, [camera, size])
 
   // Update target when phase changes

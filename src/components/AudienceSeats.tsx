@@ -53,9 +53,9 @@ export default function AudienceSeats() {
 
   return (
     <group>
-      {/* Sàn tối quanh khu ghế */}
-      <mesh position={[0, -0.82, 5.2]} receiveShadow>
-        <boxGeometry args={[12, 0.06, 3.5]} />
+      {/* Sàn tối quanh khu ghế — mép trước ở z≈5.8 cho khớp tấm sàn lớn (WaterSurface) */}
+      <mesh position={[0, -0.82, 5.15]} receiveShadow>
+        <boxGeometry args={[8.9, 0.06, 1.3]} />
         <meshStandardMaterial color="#050505" roughness={0.95} emissive="#020202" emissiveIntensity={0.01} />
       </mesh>
 
