@@ -18,6 +18,9 @@ const BASE_FOV = 56
 const BASE_ASPECT = 16 / 9
 const DEG = Math.PI / 180
 
+// Điểm camera ngắm vào — khung hình gốc (hướng vào sân khấu / thủy đình).
+const STAGE_FOCUS = new THREE.Vector3(0, 0.5, -1)
+
 export default function CinematicCamera({ phase }: CinematicCameraProps) {
   const controlsRef = useRef<any>(null)
   const { camera, size } = useThree()
@@ -29,13 +32,13 @@ export default function CinematicCamera({ phase }: CinematicCameraProps) {
   // khán giả hai bên) bị cắt dù màn hình rộng, hẹp hay dọc.
   //
   // Cảnh được dàn cho khung 16:9 với FOV dọc 56° → suy ra FOV ngang gốc.
-  //  • baseVFov  = bề cao cảnh cần thấy (56°).
+  //  • baseVFov     = bề cao cảnh cần thấy (56°).
   //  • vFovForWidth = FOV dọc cần thiết để giữ TRỌN bề ngang cảnh ở tỉ lệ hiện tại.
   // Lấy max() của hai giá trị → FOV luôn đủ lớn để KHÔNG cắt cả trên/dưới lẫn
   // hai bên:
   //  • Màn rộng (ultrawide): baseVFov thắng → giữ nguyên trên/dưới, dư bề ngang.
   //  • Màn hẹp/dọc (điện thoại): vFovForWidth thắng → "lùi tầm nhìn" cho đủ bề
-  //    ngang, ghế + rối hai bên vẫn nằm trong khung.
+  //    ngang, ghế + rối hai bên vẫn nằm trong khung (rối co lại cho vừa).
   useEffect(() => {
     const cam = camera as THREE.PerspectiveCamera
     const aspect = size.width / size.height
@@ -50,16 +53,12 @@ export default function CinematicCamera({ phase }: CinematicCameraProps) {
     cam.fov = fovDeg
     cam.updateProjectionMatrix()
 
-    // Lens shift dọc (off-axis) — CHỈ khi phải mở rộng FOV (màn hẹp/dọc).
-    // Camera GIỮ NGUYÊN vị trí & hướng nhìn (không lùi, không xoay). Ta chỉ neo
-    // mép DƯỚI của khung vào đúng vạch đáy của khung 16:9 gốc → hàng ghế luôn
-    // nằm sát mép dưới; toàn bộ phần FOV dư dồn lên TRÊN (trời) thay vì tạo
-    // khoảng đen bên dưới ghế.
+    // Lens shift dọc (off-axis) — CHỈ khi phải mở rộng FOV (màn hẹp/dọc). Neo
+    // mép DƯỚI của khung vào đúng vạch đáy khung 16:9 gốc → ghế khán giả luôn
+    // nằm sát mép dưới; phần FOV dư dồn lên TRÊN (trời) thay vì tạo khoảng đen.
     if (fovDeg > BASE_FOV + 0.01) {
       const halfBase = Math.tan((BASE_FOV * DEG) / 2)
       const halfNow = Math.tan((fovDeg * DEG) / 2)
-      // elements[9] = (top+bottom)/(top-bottom): >0 → dịch khung lên, dồn cảnh
-      // xuống cho mép dưới khít vạch đáy khung gốc.
       cam.projectionMatrix.elements[9] = 1 - halfBase / halfNow
       // QUAN TRỌNG: vá xong phải đồng bộ ma trận nghịch đảo, nếu không Raycaster
       // (dùng projectionMatrixInverse để bắn tia từ con trỏ) sẽ lệch với ảnh
@@ -88,10 +87,7 @@ export default function CinematicCamera({ phase }: CinematicCameraProps) {
 
     // Update controls target if they exist
     if (controlsRef.current) {
-      controlsRef.current.target.lerp(
-        new THREE.Vector3(0, 0.5, -1),
-        delta * 1.2
-      )
+      controlsRef.current.target.lerp(STAGE_FOCUS, delta * 1.2)
       controlsRef.current.update()
     }
   })
@@ -111,8 +107,8 @@ export default function CinematicCamera({ phase }: CinematicCameraProps) {
       maxDistance={14}
       // Don't allow panning (focus on stage)
       enablePan={false}
-      // Smooth target following
-      target={[0, 0.5, -1]}
+      // Smooth target following — ngắm vào vùng con rối (STAGE_FOCUS)
+      target={[STAGE_FOCUS.x, STAGE_FOCUS.y, STAGE_FOCUS.z]}
     />
   )
 }
