@@ -13,8 +13,7 @@
 
 .stage-ui-label {
   font-family: var(--font-body);
-  /* Co giãn theo bề rộng cửa sổ: nhỏ nhất 0.7rem, lớn nhất 1rem */
-  font-size: clamp(0.7rem, 1vw, 1rem);
+  font-size: clamp(0.65rem, 1vw, 0.85rem);
   font-weight: 600;
   letter-spacing: var(--tracking-widest);
   text-transform: uppercase;
@@ -64,7 +63,7 @@
 
 .stage-ui-act-name {
   font-family: var(--font-display);
-  font-size: clamp(0.7rem, 1.2vw, 0.9rem);
+  font-size: clamp(0.6rem, 1.2vw, 0.8rem);
   font-weight: 700;
   color: var(--color-text);
   text-shadow: 0 0 8px rgba(245, 234, 216, 0.5), 0 2px 4px rgba(0, 0, 0, 0.8);
@@ -78,7 +77,7 @@
 
 .stage-ui-act-sub {
   font-family: var(--font-body);
-  font-size: clamp(0.5rem, 1.2vw, 0.65rem);
+  font-size: clamp(0.4rem, 0.85vw, 0.55rem);
   font-weight: 500;
   color: var(--color-text);
   opacity: 0.9;
