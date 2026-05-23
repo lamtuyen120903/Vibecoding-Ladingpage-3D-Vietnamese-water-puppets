@@ -88,7 +88,7 @@ export default function WaterSurface() {
   // Looping muted video used as the water-surface texture
   const videoTexture = useMemo(() => {
     const video = document.createElement('video')
-    video.src = '/water.mov'
+    video.src = '/water.mp4'
     video.loop = true
     video.muted = true
     video.playsInline = true
