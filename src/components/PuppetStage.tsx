@@ -24,16 +24,21 @@ interface Props {
 }
 
 export default function PuppetStage({ currentAct, phase, onPuppetClick, onPuppetHover }: Props) {
-  // Detect low-power devices so we can dial down GPU cost without changing the look.
-  const { dprCap, antialias, enablePost } = useMemo(() => {
-    if (typeof window === 'undefined') return { dprCap: 1.5, antialias: true, enablePost: true }
+  // Match the device pixel ratio so models stay sharp on retina/mobile screens.
+  // We still cap at 2 to avoid wasting GPU on phones with DPR 3+ (e.g. iPhone)
+  // where the user wouldn't notice the extra fidelity. Post-FX is the only
+  // thing we drop on weaker devices — it's the heaviest, least essential layer.
+  const { dprCap, enablePost } = useMemo(() => {
+    if (typeof window === 'undefined') return { dprCap: 2, enablePost: true }
     const ua = navigator.userAgent
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua)
     const cores = navigator.hardwareConcurrency ?? 4
     const lowEnd = isMobile || cores <= 4
+    const nativeDpr = window.devicePixelRatio || 1
     return {
-      dprCap: lowEnd ? 1.25 : 1.75,
-      antialias: !lowEnd,
+      // Cap at 2 (sharp on retina) — never below the screen's actual DPR if
+      // that's already <=2, to avoid downscaling artifacts.
+      dprCap: Math.min(Math.max(nativeDpr, 1.5), 2),
       enablePost: !lowEnd,
     }
   }, [])
@@ -42,7 +47,7 @@ export default function PuppetStage({ currentAct, phase, onPuppetClick, onPuppet
     <Canvas
       camera={{ position: [0, 2.2, 9], fov: 56, near: 0.1, far: 60 }}
       gl={{
-        antialias,
+        antialias: true,
         alpha: true,
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
