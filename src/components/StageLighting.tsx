@@ -47,7 +47,8 @@ export default function StageLighting({ currentAct }: Props) {
         intensity={1.8}
         color="#f8e8c8"
         castShadow
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[768, 768]}
+        shadow-bias={-0.0008}
         shadow-camera-left={-12}
         shadow-camera-right={12}
         shadow-camera-top={10}

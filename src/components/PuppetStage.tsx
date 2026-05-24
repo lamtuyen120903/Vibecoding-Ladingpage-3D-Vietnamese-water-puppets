@@ -1,5 +1,6 @@
 import { Canvas } from '@react-three/fiber'
-import { Suspense, lazy, useMemo } from 'react'
+import { PerformanceMonitor } from '@react-three/drei'
+import { Suspense, lazy, useMemo, useState } from 'react'
 import * as THREE from 'three'
 import type { ActId, StagePhase } from '../App'
 import type { Project } from '../data/projects'
@@ -24,24 +25,15 @@ interface Props {
 }
 
 export default function PuppetStage({ currentAct, phase, onPuppetClick, onPuppetHover }: Props) {
-  // Match the device pixel ratio so models stay sharp on retina/mobile screens.
-  // We still cap at 2 to avoid wasting GPU on phones with DPR 3+ (e.g. iPhone)
-  // where the user wouldn't notice the extra fidelity. Post-FX is the only
-  // thing we drop on weaker devices — it's the heaviest, least essential layer.
-  const { dprCap, enablePost } = useMemo(() => {
-    if (typeof window === 'undefined') return { dprCap: 2, enablePost: true }
-    const ua = navigator.userAgent
-    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua)
-    const cores = navigator.hardwareConcurrency ?? 4
-    const lowEnd = isMobile || cores <= 4
-    const nativeDpr = window.devicePixelRatio || 1
-    return {
-      // Cap at 2 (sharp on retina) — never below the screen's actual DPR if
-      // that's already <=2, to avoid downscaling artifacts.
-      dprCap: Math.min(Math.max(nativeDpr, 1.5), 2),
-      enablePost: !lowEnd,
-    }
+  // Initial DPR cap — clamp to the device's native ratio (up to 2).
+  // PerformanceMonitor below will adjust this down if FPS drops on weak GPUs.
+  const initialDpr = useMemo(() => {
+    if (typeof window === 'undefined') return 1.75
+    return Math.min(Math.max(window.devicePixelRatio || 1, 1), 2)
   }, [])
+
+  const [dpr, setDpr] = useState(initialDpr)
+  const [enablePost, setEnablePost] = useState(true)
 
   return (
     <Canvas
@@ -53,32 +45,62 @@ export default function PuppetStage({ currentAct, phase, onPuppetClick, onPuppet
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 1.3,
       }}
-      shadows
-      dpr={[1, dprCap]}
+      shadows={{ type: THREE.PCFSoftShadowMap, autoUpdate: true }}
+      dpr={dpr}
       frameloop="always"
       style={{ width: '100%', height: '100%', background: 'transparent' }}
     >
+      {/* Adapt to whatever GPU we end up on. Range 0.5..2 keeps models sharp
+          when the laptop can afford it, and drops resolution under load
+          rather than rendering at a fixed (laggy) high DPR. */}
+      <PerformanceMonitor
+        bounds={() => [45, 60]}
+        flipflops={3}
+        onIncline={() => setDpr((d) => Math.min(2, d + 0.25))}
+        onDecline={() => setDpr((d) => Math.max(0.75, d - 0.25))}
+        onFallback={() => {
+          setDpr(1)
+          setEnablePost(false)
+        }}
+      />
+
+      <CinematicCamera phase={phase} />
+      <StageLighting currentAct={currentAct} />
+
+      {/* Lightweight scene shell renders immediately. Each heavy GLB has its
+          own Suspense boundary so a slow-loading model doesn't blank out
+          everything else — the seats/water/lights stay visible while
+          ThuyDinh or the musicians stream in. */}
       <Suspense fallback={null}>
-        <CinematicCamera phase={phase} />
-        <StageLighting currentAct={currentAct} />
-        <ThuyDinh />
         <WaterSurface />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <ThuyDinh />
+      </Suspense>
+
+      <Suspense fallback={null}>
         <PuppetGroup
           currentAct={currentAct}
           phase={phase}
           onPuppetClick={onPuppetClick}
           onPuppetHover={onPuppetHover}
         />
-        <AudienceSeats />
-        <TheaterFrame />
-        <WaterParticles currentAct={currentAct} phase={phase} />
-        <AmbientParticles />
-        {enablePost && (
-          <Suspense fallback={null}>
-            <EnhancedPostProcessing />
-          </Suspense>
-        )}
       </Suspense>
+
+      <Suspense fallback={null}>
+        <AudienceSeats />
+      </Suspense>
+
+      <TheaterFrame />
+      <WaterParticles currentAct={currentAct} phase={phase} />
+      <AmbientParticles />
+
+      {enablePost && (
+        <Suspense fallback={null}>
+          <EnhancedPostProcessing />
+        </Suspense>
+      )}
     </Canvas>
   )
 }
