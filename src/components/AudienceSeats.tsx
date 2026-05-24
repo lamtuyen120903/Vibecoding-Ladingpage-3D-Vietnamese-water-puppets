@@ -17,11 +17,14 @@ useGLTF.preload(SEATS_URL, true, true)
 const MODEL_W = 2.15
 const SEAT_SCALE = 2.0
 const ROW_Y_OFFSET = -0.12
+// Cap how many seat-row copies each row can have. Lower = less audience
+// density and less shadow/JS work. Was implicitly 3-4 per row (~10 total).
+const MAX_COPIES_PER_ROW = 2
 
 const rows = [
-  { z: 4.8, y: -0.55, width: 5.85 },
-  { z: 5.5, y: -0.38, width: 7.15 },
-  { z: 6.2, y: -0.18, width: 8.45 },
+  { z: 4.8, y: -0.55, width: 4.3 },
+  { z: 5.5, y: -0.38, width: 4.3 },
+  { z: 6.2, y: -0.18, width: 4.3 },
 ]
 
 interface Placement {
@@ -41,7 +44,7 @@ export default function AudienceSeats() {
 
     const items: Placement[] = []
     rows.forEach((row, ri) => {
-      const copies = Math.max(1, Math.round(row.width / MODEL_W))
+      const copies = Math.min(MAX_COPIES_PER_ROW, Math.max(1, Math.round(row.width / MODEL_W)))
       for (let i = 0; i < copies; i++) {
         const x = (i - (copies - 1) / 2) * MODEL_W + offsetX
         items.push({
@@ -54,14 +57,18 @@ export default function AudienceSeats() {
   }, [scene])
 
   // Collect every unique mesh inside the GLB so <Merged> can instance them all.
+  // Seats sit in the audience area facing the stage — they barely appear in
+  // the main light's shadow frustum and dark velvet hides cast shadow anyway.
+  // Disabling cast/receive removes the seats from the shadow pass entirely,
+  // which is the biggest single GPU cost in this scene.
   const meshes = useMemo(() => {
     const out: Record<string, THREE.Mesh> = {}
     let idx = 0
     scene.traverse((obj) => {
       const m = obj as THREE.Mesh
       if (m.isMesh) {
-        m.castShadow = true
-        m.receiveShadow = true
+        m.castShadow = false
+        m.receiveShadow = false
         out[m.name || `m${idx++}`] = m
       }
     })
