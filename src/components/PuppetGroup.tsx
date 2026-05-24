@@ -33,7 +33,7 @@ NHỮNG GÌ TÔI XÂY DỰNG:
 ✓ Phát triển cộng đồng 20% thông qua chiến lược engagement có mục tiêu
 ✓ Tiết kiệm 60% thời gian trong các quy trình kinh doanh quan trọng`,
   tools: ['Marketing Growth', 'Automation', 'n8n', 'AI Integration', 'E-commerce', 'Vibe Coding'],
-  images: ['/intro-portrait.webp', '/intro-hoian.webp'],
+  images: ['/intro-portrait.webp'],
   videos: [],
   websiteUrl: '',
   featured: true,
