@@ -11,3 +11,4 @@ package-lock.json
 # Local-only originals kept as backup before optimization (not for production)
 public/_original_img/
 public/_original_glb/
+public/_original_video/
