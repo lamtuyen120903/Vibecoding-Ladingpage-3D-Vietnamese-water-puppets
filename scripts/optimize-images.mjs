@@ -15,10 +15,13 @@ const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1'
 const PUBLIC_DIR = join(ROOT, 'public')
 const BACKUP_DIR = join(PUBLIC_DIR, '_original_img')
 
-const MAX_DIMENSION = 1920 // cap any image to 1920px on its longer side
-const WEBP_Q_LOSSLESS_FALLBACK = 90
-const WEBP_Q_PHOTO = 85
-const JPG_Q = 82
+const MAX_DIMENSION = 2400 // cap large hero images; smaller ones unchanged
+// Higher quality so mobile retina screens don't show compression artifacts.
+// q=95 keeps the file ~3x larger than q=85 but is visually near-lossless.
+const WEBP_Q_PNG = 95   // for screenshots / UI with text & sharp edges
+const WEBP_Q_PHOTO = 92 // for natural photos
+const JPG_Q = 90        // mozjpeg fallback (legacy browsers only)
+const REENCODE_FALLBACK = false // skip re-encoding original PNG/JPG (keep first-pass smaller copies)
 
 const exts = new Set(['.png', '.jpg', '.jpeg'])
 
@@ -50,27 +53,30 @@ async function processOne(name) {
 
   // 1) write modern WebP alongside (keeps original extension for fallback)
   const webpPath = join(PUBLIC_DIR, `${stem}.webp`)
-  const webpQ = ext === '.png' ? WEBP_Q_LOSSLESS_FALLBACK : WEBP_Q_PHOTO
+  const webpQ = ext === '.png' ? WEBP_Q_PNG : WEBP_Q_PHOTO
   await resizedPipeline.clone()
     .webp({ quality: webpQ, effort: 6 })
     .toFile(webpPath)
   const webpSize = (await stat(webpPath)).size
 
-  // 2) re-encode the original format in place (smaller PNG/JPG as a safety fallback)
-  let fallbackSize = before
-  if (ext === '.png') {
-    await resizedPipeline.clone()
-      .png({ compressionLevel: 9, palette: true, quality: 90 })
-      .toFile(src + '.tmp')
-  } else {
-    await resizedPipeline.clone()
-      .jpeg({ quality: JPG_Q, mozjpeg: true, progressive: true })
-      .toFile(src + '.tmp')
+  // 2) optionally re-encode the original format in place (skipped by default
+  //    now — keep the existing small fallback PNG/JPGs that ship to legacy
+  //    browsers; nearly all modern browsers will pick the WebP anyway).
+  let fallbackSize = (await stat(src)).size
+  if (REENCODE_FALLBACK) {
+    if (ext === '.png') {
+      await resizedPipeline.clone()
+        .png({ compressionLevel: 9, palette: true, quality: 90 })
+        .toFile(src + '.tmp')
+    } else {
+      await resizedPipeline.clone()
+        .jpeg({ quality: JPG_Q, mozjpeg: true, progressive: true })
+        .toFile(src + '.tmp')
+    }
+    const { rename } = await import('node:fs/promises')
+    await rename(src + '.tmp', src)
+    fallbackSize = (await stat(src)).size
   }
-  // replace
-  const { rename } = await import('node:fs/promises')
-  await rename(src + '.tmp', src)
-  fallbackSize = (await stat(src)).size
 
   console.log(
     `  ${name.padEnd(34)}  ${fmt(before).padStart(10)}  ->  ` +
