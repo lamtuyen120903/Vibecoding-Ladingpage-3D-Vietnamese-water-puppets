@@ -41,7 +41,11 @@ async function processOne(name) {
   const backup = join(BACKUP_DIR, name)
   if (!existsSync(backup)) await copyFile(src, backup)
 
-  const img = sharp(backup) // always read from the pristine backup
+  // `.rotate()` (no args) auto-applies EXIF Orientation and then strips it.
+  // Without this, phone photos that store "rotate 180/90/270" in EXIF get
+  // re-encoded as-stored and come out flipped — exactly what happened to
+  // intro-hoian.jpg in the first pass.
+  const img = sharp(backup).rotate()
   const meta = await img.metadata()
   const longest = Math.max(meta.width ?? 0, meta.height ?? 0)
   const needResize = longest > MAX_DIMENSION
