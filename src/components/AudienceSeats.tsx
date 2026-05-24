@@ -21,10 +21,12 @@ const ROW_Y_OFFSET = -0.12
 // density and less shadow/JS work. Was implicitly 3-4 per row (~10 total).
 const MAX_COPIES_PER_ROW = 2
 
+// width ≈ MODEL_W * SEAT_SCALE * (desired copies). MAX_COPIES_PER_ROW also caps.
+// Front row narrower → stadium-style audience (closer to stage = smaller wing-out).
 const rows = [
-  { z: 4.8, y: -0.55, width: 4.3 },
-  { z: 5.5, y: -0.38, width: 4.3 },
-  { z: 6.2, y: -0.18, width: 4.3 },
+  { z: 4.8, y: -0.55, width: 4.3 },  // ~1 copy (focused front)
+  { z: 5.5, y: -0.38, width: 8.6 },  // 2 copies
+  { z: 6.2, y: -0.18, width: 8.6 },  // 2 copies
 ]
 
 interface Placement {
@@ -36,24 +38,32 @@ export default function AudienceSeats() {
   const { scene } = useGLTF(SEATS_URL, true, true) as unknown as { scene: THREE.Group }
 
   // Compute placements (positions of each row-copy) — pure data, no clones.
-  const { placements, groundOffsetY } = useMemo(() => {
+  // The whole row-copy gets scaled by SEAT_SCALE later, so:
+  //   - x-spacing in WORLD space = MODEL_W * SEAT_SCALE (so copies sit edge to edge)
+  //   - the horizontal centering offset (in model coords) is applied INSIDE the
+  //     scaled wrapper, so it gets scaled with the geometry
+  const { placements, groundOffsetY, centerOffsetX } = useMemo(() => {
     const bbox = new THREE.Box3().setFromObject(scene)
     const center = bbox.getCenter(new THREE.Vector3())
-    const groundOffsetY = -bbox.min.y // how much to lift so y=0 sits on the floor
-    const offsetX = -center.x         // center horizontally
+    const groundOffsetY = -bbox.min.y // lift so y=0 sits on the floor (model coords)
+    const centerOffsetX = -center.x   // model coords; applied inside scale group
 
+    const worldSpacing = MODEL_W * SEAT_SCALE
     const items: Placement[] = []
     rows.forEach((row, ri) => {
-      const copies = Math.min(MAX_COPIES_PER_ROW, Math.max(1, Math.round(row.width / MODEL_W)))
+      const copies = Math.min(
+        MAX_COPIES_PER_ROW,
+        Math.max(1, Math.round(row.width / worldSpacing)),
+      )
       for (let i = 0; i < copies; i++) {
-        const x = (i - (copies - 1) / 2) * MODEL_W + offsetX
+        const x = (i - (copies - 1) / 2) * worldSpacing
         items.push({
           key: `${ri}-${i}`,
           position: [x, row.y + ROW_Y_OFFSET, row.z],
         })
       }
     })
-    return { placements: items, groundOffsetY }
+    return { placements: items, groundOffsetY, centerOffsetX }
   }, [scene])
 
   // Collect every unique mesh inside the GLB so <Merged> can instance them all.
@@ -99,7 +109,9 @@ export default function AudienceSeats() {
                 rotation={[0, Math.PI, 0]}
                 scale={SEAT_SCALE}
               >
-                <group position={[0, groundOffsetY, 0]}>
+                {/* Both offsets are in MODEL coords here (inside the scale
+                    wrapper), so the model is centered + grounded properly. */}
+                <group position={[centerOffsetX, groundOffsetY, 0]}>
                   {Object.keys(Instances).map((name) => {
                     const Inst = Instances[name]
                     return <Inst key={name} />
