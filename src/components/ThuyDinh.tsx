@@ -1,17 +1,18 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { useGLTF } from '@react-three/drei'
+import { useGLTF, useAnimations } from '@react-three/drei'
+import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 
 import * as THREE from 'three'
 
 const CUNG_DINH_URL = '/cung-dinh.glb'
-useGLTF.preload(CUNG_DINH_URL, false, true)
+useGLTF.preload(CUNG_DINH_URL, true, true)
 
 const BUC_URL = '/buc-nhac-cong.glb'
-useGLTF.preload(BUC_URL, false, true)
+useGLTF.preload(BUC_URL, true, true)
 
 const MUSICIAN_URL = '/musician.glb'
-useGLTF.preload(MUSICIAN_URL, false, true)
+useGLTF.preload(MUSICIAN_URL, true, true)
 
 const LERP_SPEEDS = [0.025, 0.03, 0.035, 0.028]
 const PLATFORM_WIDTH = 1.2
@@ -460,7 +461,7 @@ function Tassel({ x }: { x: number }) {
  * original inner cung-đình group. Uniform fit.scale matches old height (~6.05 units).
  */
 function CungDinhModel() {
-  const { scene } = useGLTF(CUNG_DINH_URL, false, true) as unknown as { scene: THREE.Group }
+  const { scene } = useGLTF(CUNG_DINH_URL, true, true) as unknown as { scene: THREE.Group }
 
   const model = useMemo(() => {
     const c = scene.clone(true)
@@ -500,7 +501,7 @@ function CungDinhModel() {
 const BUC_TARGET_H = 1.22 // matches old platform top surface height
 
 function BucModel() {
-  const { scene } = useGLTF(BUC_URL, false, true) as unknown as { scene: THREE.Group }
+  const { scene } = useGLTF(BUC_URL, true, true) as unknown as { scene: THREE.Group }
 
   const model = useMemo(() => {
     const c = scene.clone(true)
@@ -540,10 +541,15 @@ function BucModel() {
 const MUSICIAN_TARGET_H = 1.2
 
 function MusicianModel({ side }: { side: -1 | 1 }) {
-  const { scene } = useGLTF(MUSICIAN_URL, false, true) as unknown as { scene: THREE.Group }
+  const { scene, animations } = useGLTF(MUSICIAN_URL, true, true) as unknown as {
+    scene: THREE.Group
+    animations: THREE.AnimationClip[]
+  }
 
+  // Use SkeletonUtils.clone so skinned meshes (musicians) keep their rig when
+  // we render the model twice (once per side) — vanilla clone() breaks skinning.
   const model = useMemo(() => {
-    const c = scene.clone(true)
+    const c = SkeletonUtils.clone(scene) as THREE.Group
     c.traverse((obj) => {
       const m = obj as THREE.Mesh
       if (m.isMesh) { m.castShadow = true; m.receiveShadow = true }
@@ -562,12 +568,66 @@ function MusicianModel({ side }: { side: -1 | 1 }) {
     }
   }, [model])
 
+  // Play any animation clips embedded in the GLB (musicians playing instruments).
+  const { actions, mixer } = useAnimations(animations, model)
+  useEffect(() => {
+    const clip = Object.values(actions)[0]
+    if (!clip) return
+    // Different starting offset per side so left/right musicians don't move in sync
+    clip.reset()
+    clip.timeScale = 1
+    clip.time = side === -1 ? 0 : Math.max(clip.getClip().duration * 0.45, 0)
+    clip.play()
+    return () => { clip.stop() }
+  }, [actions, side])
+
+  // Two distinct gentle motion styles — both soft, but visually different so
+  // the two musician groups don't look like mirror copies of each other.
+  //   Left  → pendulum: slow side-to-side rocking (like keeping a quiet beat)
+  //   Right → bow & breathe: gentle forward nod with a soft chest breath
+  const groupRef = useRef<THREE.Group>(null)
+  const baseY = 1.0
+  const baseYaw = side === -1 ? Math.PI / 2 : -Math.PI / 2
+
+  useFrame(({ clock }) => {
+    const g = groupRef.current
+    if (!g) return
+    const t = clock.getElapsedTime()
+
+    if (side === -1) {
+      // ===== LEFT — pendulum rocking (~+30% amplitude) =====
+      const rock = Math.sin(t * 0.7)
+      g.rotation.z = rock * 0.046                  // ±2.6°, the dominant motion
+      g.position.y = baseY + Math.abs(rock) * 0.016 // slight rise at extremes
+      // Tiny counter forward-back, much smaller
+      g.rotation.x = Math.sin(t * 0.45) * 0.010    // ±0.6°
+      // Head follows the rock direction (like balancing)
+      g.rotation.y = baseYaw + rock * 0.033         // ±1.9°
+      g.scale.setScalar(fit.scale)                  // no scale pulse
+    } else {
+      // ===== RIGHT — slow bow & breathe (~+30% amplitude) =====
+      const breath = (Math.sin(t * 0.55) + 1) * 0.5  // 0..1, ~11s period
+      g.rotation.x = breath * 0.065 - 0.013          // 0..+3°, mostly forward
+      // Chest rises and falls with the breath
+      g.position.y = baseY + Math.sin(t * 0.55) * 0.032 // ±3.2 cm
+      // Very tiny sway to break stiffness
+      g.rotation.z = Math.sin(t * 0.35 + 1.2) * 0.016   // ±0.9°
+      // Head stays nearly fixed
+      g.rotation.y = baseYaw + Math.sin(t * 0.4) * 0.010 // ±0.6°
+      // Subtle breathing scale on the bow
+      g.scale.setScalar(fit.scale * (1 + breath * 0.016))
+    }
+
+    // Keep mixer fed even if useFrame inside useAnimations isn't (defensive)
+    if (mixer && !Object.keys(actions).length) mixer.update(0)
+  })
+
   // Face inward: side -1 (left) → +X, side 1 (right) → -X. This rotation also
   // aligns the model's wide X-axis with the platform depth (Z).
   const rotY = side === -1 ? Math.PI / 2 : -Math.PI / 2
 
   return (
-    <group position={[0, 1.0, 0]} rotation={[0, rotY, 0]} scale={fit.scale}>
+    <group ref={groupRef} position={[0, 1.0, 0]} rotation={[0, rotY, 0]} scale={fit.scale}>
       <primitive object={model} position={fit.offset} />
     </group>
   )

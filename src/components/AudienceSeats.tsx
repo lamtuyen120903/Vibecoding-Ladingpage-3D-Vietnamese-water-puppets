@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { useGLTF } from '@react-three/drei'
 
 const SEATS_URL = '/seats-row.glb'
-useGLTF.preload(SEATS_URL, false, true)
+useGLTF.preload(SEATS_URL, true, true)
 
 /**
  * Audience seating — 3 dãy ghế dựng từ Meshy GLB "Row of Red Velvet Seats".
@@ -25,7 +25,7 @@ const rows = [
 ]
 
 export default function AudienceSeats() {
-  const { scene } = useGLTF(SEATS_URL, false, true) as unknown as { scene: THREE.Group }
+  const { scene } = useGLTF(SEATS_URL, true, true) as unknown as { scene: THREE.Group }
 
   // Tạo sẵn tất cả bản sao ghế (mỗi vị trí cần 1 clone riêng), đã ground + canh giữa
   const placements = useMemo(() => {

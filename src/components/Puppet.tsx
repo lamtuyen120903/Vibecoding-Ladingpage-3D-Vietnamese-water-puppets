@@ -5,7 +5,7 @@ import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 import * as THREE from 'three'
 
 const MODEL_URL = '/puppet-girl.glb'
-useGLTF.preload(MODEL_URL, false, true)
+useGLTF.preload(MODEL_URL, true, true)
 
 export interface PuppetConfig {
   id: string
@@ -38,7 +38,7 @@ export default function Puppet({ config, highlighted, onClick, onHover }: Props)
   const glow = highlighted || hovered
 
   // === Load + clone GLB model (skinned mesh requires SkeletonUtils.clone) ===
-  const { scene, animations } = useGLTF(MODEL_URL, false, true) as unknown as {
+  const { scene, animations } = useGLTF(MODEL_URL, true, true) as unknown as {
     scene: THREE.Group
     animations: THREE.AnimationClip[]
   }

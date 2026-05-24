@@ -4,13 +4,62 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b0606" />
+    <meta name="description" content="Portfolio — Analysis · Automation · AI · Vietnamese Water Puppet Theater" />
     <title>Portfolio — Analysis · Automation · AI</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Fonts (non-blocking) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap"
+      onload="this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap"
+      />
+    </noscript>
+
+    <!-- Critical: background video starts loading immediately -->
+    <link rel="preload" as="video" href="/bg-video.mp4" type="video/mp4" />
+
+    <style>
+      html, body { background: #0b0606; }
+      #root { min-height: 100vh; }
+      .app-boot {
+        position: fixed; inset: 0; display: grid; place-items: center;
+        background: radial-gradient(ellipse at center, #1a0d0d 0%, #050202 70%);
+        color: #d8b048; font-family: 'Cormorant Garamond', serif;
+        z-index: 9999;
+      }
+      .app-boot__title { font-size: 2.2rem; letter-spacing: .15em; opacity: .85; }
+      .app-boot__sub   { font-size: .9rem; opacity: .55; margin-top: .5rem; letter-spacing: .25em; text-transform: uppercase; }
+      .app-boot__dot   {
+        margin-top: 1.8rem; width: 8px; height: 8px; border-radius: 50%;
+        background: #d8b048; opacity: .65;
+        animation: app-boot-pulse 1.4s ease-in-out infinite;
+      }
+      @keyframes app-boot-pulse {
+        0%, 100% { transform: scale(.7); opacity: .35; }
+        50%      { transform: scale(1.2); opacity: .9; }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="app-boot">
+        <div style="text-align:center">
+          <div class="app-boot__title">Múa Rối Nước</div>
+          <div class="app-boot__sub">Loading…</div>
+          <div class="app-boot__dot" style="margin-left:auto;margin-right:auto"></div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

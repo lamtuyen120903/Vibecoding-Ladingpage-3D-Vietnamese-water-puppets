@@ -1,9 +1,12 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react'
 import PuppetStage from './components/PuppetStage'
-import StageUI from './components/StageUI'
-import ProjectDetailModal from './components/ProjectDetailModal'
 import type { Project } from './data/projects'
 import './App.css'
+
+// Heavy non-critical UI — split out of the initial bundle.
+// StageUI only mounts after the 8s opening sequence; the modal only on demand.
+const StageUI = lazy(() => import('./components/StageUI'))
+const ProjectDetailModal = lazy(() => import('./components/ProjectDetailModal'))
 
 export type ActId = 'intro' | 'automation' | 'vibecoding' | 'video'
 export type StagePhase = 'opening' | 'performing'
@@ -17,20 +20,24 @@ function App() {
   const [musicPlaying, setMusicPlaying] = useState(true)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
+  // Lazy-init audio: create the element only on the first user gesture so we
+  // don't pay the 2.8 MB download up-front (autoplay is blocked anyway).
   useEffect(() => {
-    const audio = new Audio('/bg-music.mp3')
-    audio.loop = true
-    audio.volume = 0.35
-    audioRef.current = audio
-    // Auto-play on first user interaction (browser requires gesture)
     const tryPlay = () => {
-      audio.play().catch(() => {})
+      if (!audioRef.current) {
+        const audio = new Audio('/bg-music.mp3')
+        audio.loop = true
+        audio.volume = 0.35
+        audio.preload = 'auto'
+        audioRef.current = audio
+      }
+      audioRef.current.play().catch(() => {})
     }
-    tryPlay()
     document.addEventListener('click', tryPlay, { once: true })
     document.addEventListener('keydown', tryPlay, { once: true })
     return () => {
-      audio.pause(); audio.src = ''
+      const audio = audioRef.current
+      if (audio) { audio.pause(); audio.src = '' }
       document.removeEventListener('click', tryPlay)
       document.removeEventListener('keydown', tryPlay)
     }
@@ -38,7 +45,16 @@ function App() {
 
   const toggleMusic = useCallback(() => {
     const audio = audioRef.current
-    if (!audio) return
+    if (!audio) {
+      // First-ever click on the music button counts as the gesture
+      const a = new Audio('/bg-music.mp3')
+      a.loop = true
+      a.volume = 0.35
+      audioRef.current = a
+      a.play().catch(() => {})
+      setMusicPlaying(true)
+      return
+    }
     if (musicPlaying) {
       audio.pause()
     } else {
@@ -57,6 +73,17 @@ function App() {
         clearTimeout(phaseTimer)
       }
     }
+  }, [phase])
+
+  // Pre-warm StageUI/Modal chunks during the opening sequence so the transition
+  // at t=8s feels instant without bloating the initial bundle.
+  useEffect(() => {
+    if (phase !== 'opening') return
+    const t = setTimeout(() => {
+      import('./components/StageUI')
+      import('./components/ProjectDetailModal')
+    }, 3000)
+    return () => clearTimeout(t)
   }, [phase])
 
   const handleActChange = useCallback((act: ActId) => {
@@ -79,6 +106,7 @@ function App() {
         loop
         muted
         playsInline
+        preload="metadata"
       />
 
       <PuppetStage
@@ -109,11 +137,11 @@ function App() {
         onClick={toggleMusic}
         title={musicPlaying ? 'Tắt nhạc' : 'Bật nhạc'}
       >
-        {musicPlaying ? '\u266B' : '\u266A'}
+        {musicPlaying ? '♫' : '♪'}
       </button>
 
       {phase === 'performing' && (
-        <>
+        <Suspense fallback={null}>
           <StageUI
             currentAct={currentAct}
             onActChange={handleActChange}
@@ -123,7 +151,7 @@ function App() {
             project={selectedProject}
             onClose={() => setSelectedProject(null)}
           />
-        </>
+        </Suspense>
       )}
     </div>
   )

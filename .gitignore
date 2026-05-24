@@ -8,3 +8,6 @@ dist/
 san_khau_mua_roi/
 .claude/
 package-lock.json
+# Local-only originals kept as backup before optimization (not for production)
+public/_original_img/
+public/_original_glb/
