@@ -74,10 +74,7 @@ export default function StageUI({ currentAct, onActChange, hoveredPuppet }: Prop
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    let seen = false
-    try { seen = localStorage.getItem('tutorial-seen') === '1' } catch {}
-    if (seen) return
-    // Small delay so the stage UI has finished its mount animation
+    // Always auto-launch on every visit (no localStorage gate).
     const id = setTimeout(() => {
       setTourStep(0)
       setTourActive(true)
@@ -96,7 +93,6 @@ export default function StageUI({ currentAct, onActChange, hoveredPuppet }: Prop
   const stopTour = () => {
     setTourActive(false)
     setGuideOpen(true)
-    try { localStorage.setItem('tutorial-seen', '1') } catch {}
   }
   const nextStep = () => {
     if (tourStep >= tutorialSteps.length - 1) stopTour()
