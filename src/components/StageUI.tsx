@@ -64,12 +64,26 @@ const acts: { id: ActId; label: string; sub: string }[] = [
 ]
 
 export default function StageUI({ currentAct, onActChange, hoveredPuppet }: Props) {
-  // Tour is opt-in (launched from the guide's Tutorial tab) so it never blocks
-  // the user from clicking puppets right away.
+  // Tour auto-starts the first time a visitor reaches the stage. After they
+  // finish (or dismiss) it, we set a localStorage flag so it doesn't pop up
+  // every subsequent visit. Clearing localStorage shows it again.
   const [guideOpen, setGuideOpen] = useState(false)
   const [guideTab, setGuideTab] = useState<'controls' | 'tutorial'>('controls')
   const [tourActive, setTourActive] = useState(false)
   const [tourStep, setTourStep] = useState(0)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    let seen = false
+    try { seen = localStorage.getItem('tutorial-seen') === '1' } catch {}
+    if (seen) return
+    // Small delay so the stage UI has finished its mount animation
+    const id = setTimeout(() => {
+      setTourStep(0)
+      setTourActive(true)
+    }, 700)
+    return () => clearTimeout(id)
+  }, [])
   const hoveredProject = hoveredPuppet
     ? projects.find(p => p.id === hoveredPuppet) || (hoveredPuppet === 'intro-personal' ? { title: 'Giới thiệu cá nhân', shortDescription: 'Click để xem' } : null)
     : null
@@ -82,6 +96,7 @@ export default function StageUI({ currentAct, onActChange, hoveredPuppet }: Prop
   const stopTour = () => {
     setTourActive(false)
     setGuideOpen(true)
+    try { localStorage.setItem('tutorial-seen', '1') } catch {}
   }
   const nextStep = () => {
     if (tourStep >= tutorialSteps.length - 1) stopTour()
