@@ -1,0 +1,31 @@
+# Standalone container for running asset optimization (GLB + images).
+# Use this if you'd rather run the pipeline in Docker (e.g. in a runner
+# that doesn't have Node already) instead of locally / via GitHub Actions.
+#
+# Build:
+#   docker build -f Dockerfile.optimize -t portfolio-optimize .
+#
+# Run (mount the project so optimized files land in your working tree):
+#   docker run --rm -v "$(pwd):/app" portfolio-optimize
+#
+# Pass --force to re-process even if .optimized markers exist:
+#   docker run --rm -v "$(pwd):/app" portfolio-optimize npm run optimize:glb:force
+
+FROM node:20-bookworm-slim AS base
+
+# sharp + gltf-transform native deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libvips-dev \
+    python3 \
+    build-essential \
+    ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Cache deps layer
+COPY package.json package-lock.json* bun.lock* ./
+RUN npm ci --no-audit --no-fund
+
+# Default: optimize both GLB and images, then exit
+CMD ["sh", "-c", "npm run optimize:glb && npm run optimize:images"]

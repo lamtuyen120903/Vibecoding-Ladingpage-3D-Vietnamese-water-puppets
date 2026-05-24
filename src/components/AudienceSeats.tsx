@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import * as THREE from 'three'
-import { useGLTF } from '@react-three/drei'
+import { useGLTF, Instances, Instance, Merged } from '@react-three/drei'
 
 const SEATS_URL = '/seats-row.glb'
 useGLTF.preload(SEATS_URL, true, true)
@@ -10,64 +10,103 @@ useGLTF.preload(SEATS_URL, true, true)
  * Model gốc: rộng 2.15 × cao 0.40 × sâu 0.35 (1 dãy ngắn) → scale lên rồi lát
  * nhiều bản cho mỗi hàng để phủ bề ngang khu khán giả.
  *
- * Thông số dễ chỉnh: SEAT_SCALE (độ lớn) · ROW_Y_OFFSET (cao/thấp).
+ * Trước đây: scene.clone(true) cho mỗi bản → N×meshes draw calls.
+ * Bây giờ: drei <Merged> gom các unique meshes trong GLB rồi instance lại,
+ * mỗi mesh thành 1 draw call duy nhất bất kể số bản (chục cho tới hàng trăm).
  */
 const MODEL_W = 2.15
 const SEAT_SCALE = 2.0
-const ROW_W = MODEL_W * SEAT_SCALE // bề ngang 1 bản sau scale
-const ROW_Y_OFFSET = -0.12 // hạ ghế xuống cho sát bậc
+const ROW_Y_OFFSET = -0.12
 
-// 3 dãy: z lùi dần ra sau, y cao dần (kiểu khán đài), width = bề ngang mong muốn
 const rows = [
   { z: 4.8, y: -0.55, width: 5.85 },
   { z: 5.5, y: -0.38, width: 7.15 },
   { z: 6.2, y: -0.18, width: 8.45 },
 ]
 
+interface Placement {
+  key: string
+  position: [number, number, number]
+}
+
 export default function AudienceSeats() {
   const { scene } = useGLTF(SEATS_URL, true, true) as unknown as { scene: THREE.Group }
 
-  // Tạo sẵn tất cả bản sao ghế (mỗi vị trí cần 1 clone riêng), đã ground + canh giữa
-  const placements = useMemo(() => {
-    const base = scene.clone(true)
-    base.traverse((o) => {
-      const m = o as THREE.Mesh
-      if (m.isMesh) { m.castShadow = true; m.receiveShadow = true }
-    })
-    const bbox = new THREE.Box3().setFromObject(base)
+  // Compute placements (positions of each row-copy) — pure data, no clones.
+  const { placements, groundOffsetY } = useMemo(() => {
+    const bbox = new THREE.Box3().setFromObject(scene)
     const center = bbox.getCenter(new THREE.Vector3())
-    const offset = new THREE.Vector3(-center.x, -bbox.min.y, -center.z) // ground đáy về y=0
+    const groundOffsetY = -bbox.min.y // how much to lift so y=0 sits on the floor
+    const offsetX = -center.x         // center horizontally
 
-    const items: { key: string; obj: THREE.Group; y: number; z: number }[] = []
+    const items: Placement[] = []
     rows.forEach((row, ri) => {
-      const copies = Math.max(1, Math.round(row.width / ROW_W))
+      const copies = Math.max(1, Math.round(row.width / MODEL_W))
       for (let i = 0; i < copies; i++) {
-        const obj = base.clone(true)
-        const x = (i - (copies - 1) / 2) * MODEL_W // local (sẽ nhân SEAT_SCALE bởi group)
-        obj.position.set(offset.x + x, offset.y, offset.z)
-        items.push({ key: `${ri}-${i}`, obj, y: row.y + ROW_Y_OFFSET, z: row.z })
+        const x = (i - (copies - 1) / 2) * MODEL_W + offsetX
+        items.push({
+          key: `${ri}-${i}`,
+          position: [x, row.y + ROW_Y_OFFSET, row.z],
+        })
       }
     })
-    return items
+    return { placements: items, groundOffsetY }
+  }, [scene])
+
+  // Collect every unique mesh inside the GLB so <Merged> can instance them all.
+  const meshes = useMemo(() => {
+    const out: Record<string, THREE.Mesh> = {}
+    let idx = 0
+    scene.traverse((obj) => {
+      const m = obj as THREE.Mesh
+      if (m.isMesh) {
+        m.castShadow = true
+        m.receiveShadow = true
+        out[m.name || `m${idx++}`] = m
+      }
+    })
+    return out
   }, [scene])
 
   return (
     <group>
-      {/* Sàn tối quanh khu ghế — mép trước ở z≈5.8 cho khớp tấm sàn lớn (WaterSurface) */}
+      {/* Sàn tối quanh khu ghế */}
       <mesh position={[0, -0.82, 5.15]} receiveShadow>
         <boxGeometry args={[8.9, 0.06, 1.3]} />
         <meshStandardMaterial color="#050505" roughness={0.95} emissive="#020202" emissiveIntensity={0.01} />
       </mesh>
 
-      {placements.map((it) => (
-        <group key={it.key} position={[0, it.y, it.z]} rotation={[0, Math.PI, 0]} scale={SEAT_SCALE}>
-          <primitive object={it.obj} />
-        </group>
-      ))}
-
-      {/* Đèn vùng khán giả */}
+      {/* Đèn vùng khán giả — chỉ 2 đèn, không castShadow để tiết kiệm */}
       <pointLight position={[0, 3, 5.5]} intensity={5} color="#ffe8c0" distance={16} decay={1} />
       <pointLight position={[0, 0.5, 5.5]} intensity={1.5} color="#e0d0b0" distance={10} decay={1.3} />
+
+      {/* Instanced seat rows — every mesh inside the GLB becomes ONE draw call
+          regardless of how many row copies we render. */}
+      <Merged meshes={meshes}>
+        {(Instances: Record<string, React.ComponentType<any>>) => (
+          <>
+            {placements.map((p) => (
+              <group
+                key={p.key}
+                position={p.position}
+                rotation={[0, Math.PI, 0]}
+                scale={SEAT_SCALE}
+              >
+                <group position={[0, groundOffsetY, 0]}>
+                  {Object.keys(Instances).map((name) => {
+                    const Inst = Instances[name]
+                    return <Inst key={name} />
+                  })}
+                </group>
+              </group>
+            ))}
+          </>
+        )}
+      </Merged>
     </group>
   )
 }
+
+// `Instances`/`Instance` re-exports — keeps import order stable even though
+// the body uses `Merged` directly above.
+void Instances; void Instance

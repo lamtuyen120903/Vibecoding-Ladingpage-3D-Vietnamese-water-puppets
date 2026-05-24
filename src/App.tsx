@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react'
 import PuppetStage from './components/PuppetStage'
+import PerfMonitor from './components/PerfMonitor'
 import type { Project } from './data/projects'
 import './App.css'
 
@@ -99,6 +100,7 @@ function App() {
 
   return (
     <div className="stage-container">
+      <PerfMonitor />
       <video
         className="bg-video"
         src="/bg-video.mp4"

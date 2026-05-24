@@ -1,18 +1,42 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useGLTF, useAnimations } from '@react-three/drei'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 
 import * as THREE from 'three'
 
+// === Tier 1 (hero) — preload immediately so the central pavilion is the first
+// heavy asset on the wire. Loads in parallel with code chunks.
 const CUNG_DINH_URL = '/cung-dinh.glb'
 useGLTF.preload(CUNG_DINH_URL, true, true)
 
+// === Tier 2 (background/side dressing) — DO NOT call preload here.
+// These start downloading only after the DelayedLoader fires (see below),
+// giving the hero scene + bg-video bandwidth headroom on slow connections.
 const BUC_URL = '/buc-nhac-cong.glb'
-useGLTF.preload(BUC_URL, true, true)
-
 const MUSICIAN_URL = '/musician.glb'
-useGLTF.preload(MUSICIAN_URL, true, true)
+
+// Tier 2 GLBs start downloading this many ms after first render.
+const TIER2_DELAY_MS = 2000
+
+/**
+ * Mounts its children after `delay` ms. While waiting, returns null so any
+ * `useGLTF` inside them never fires its fetch. Lets us defer Tier 2 GLB
+ * downloads without changing their component code.
+ */
+function DelayedMount({ delay, children }: { delay: number; children: React.ReactNode }) {
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    if (typeof window === 'undefined') { setShow(true); return }
+    // Use requestIdleCallback when available — even more deferential
+    const ric = (window as any).requestIdleCallback ?? ((cb: any) => setTimeout(cb, delay))
+    const cic = (window as any).cancelIdleCallback ?? clearTimeout
+    const id = ric(() => setShow(true), { timeout: delay + 1000 })
+    const fallback = setTimeout(() => setShow(true), delay)
+    return () => { cic(id); clearTimeout(fallback) }
+  }, [delay])
+  return show ? <>{children}</> : null
+}
 
 const LERP_SPEEDS = [0.025, 0.03, 0.035, 0.028]
 const PLATFORM_WIDTH = 1.2
@@ -100,18 +124,24 @@ export default function ThuyDinh() {
 
   return (
     <group position={[0, -0.4, -4.5]}>
-      {/* ===== CUNG ĐÌNH — Thăng Long water puppet theater (reference-accurate) ===== */}
-      <CungDinhModel />
-      {/* ===== SIDE PLATFORMS (wings) — beside the water pool ===== */}
-      {[-1, 1].map((side) => (
-        <group key={`wing-${side}`} position={[side * 5, -0.5, 5.3]}>
-          {/* Bục nhạc công — Meshy GLB (Red Lacquer Dragon Panel), fit to old platform footprint */}
-          <BucModel />
+      {/* ===== TIER 1 — CUNG ĐÌNH (hero pavilion, loads first) ===== */}
+      <Suspense fallback={null}>
+        <CungDinhModel />
+      </Suspense>
 
-          {/* Musicians on platform — 1 Meshy GLB ensemble per side */}
-          <MusicianModel side={side as -1 | 1} />
-        </group>
-      ))}
+      {/* ===== TIER 2 — Side platforms + musicians (delayed 2s) ===== */}
+      <DelayedMount delay={TIER2_DELAY_MS}>
+        {[-1, 1].map((side) => (
+          <group key={`wing-${side}`} position={[side * 5, -0.5, 5.3]}>
+            <Suspense fallback={null}>
+              <BucModel />
+            </Suspense>
+            <Suspense fallback={null}>
+              <MusicianModel side={side as -1 | 1} />
+            </Suspense>
+          </group>
+        ))}
+      </DelayedMount>
 
 
 

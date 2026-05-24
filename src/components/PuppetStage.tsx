@@ -13,6 +13,7 @@ import TheaterFrame from './TheaterFrame'
 import WaterParticles from './WaterParticles'
 import AmbientParticles from './AmbientParticles'
 import CinematicCamera from './CinematicCamera'
+import { CanvasPerfMonitor } from './PerfMonitor'
 
 // Postprocessing pulls in a 160KB chunk — only load it when actually rendered.
 const EnhancedPostProcessing = lazy(() => import('./EnhancedPostProcessing'))
@@ -53,6 +54,7 @@ export default function PuppetStage({ currentAct, phase, onPuppetClick, onPuppet
       {/* Adapt to whatever GPU we end up on. Range 0.5..2 keeps models sharp
           when the laptop can afford it, and drops resolution under load
           rather than rendering at a fixed (laggy) high DPR. */}
+      <CanvasPerfMonitor />
       <PerformanceMonitor
         bounds={() => [45, 60]}
         flipflops={3}

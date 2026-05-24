@@ -1,0 +1,72 @@
+name: Optimize assets
+
+# When to run:
+#   - Manual trigger (Actions tab → "Run workflow")
+#   - When someone pushes a new/changed .glb to the originals backup folder
+#     (so the optimized GLB committed to public/ stays in sync)
+#
+# What it does:
+#   1. Restores originals from public/_original_glb/ (the pristine sources)
+#   2. Re-runs the gltf-transform pipeline with `--force`
+#   3. Opens a PR with the freshly optimized GLBs
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'public/_original_glb/**'
+      - 'scripts/optimize-glb-node.mjs'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore originals before optimizing
+        run: |
+          if [ -d public/_original_glb ]; then
+            cp public/_original_glb/*.glb public/ 2>/dev/null || true
+            # Drop marker files so the script actually re-runs
+            rm -f public/*.glb.optimized
+          fi
+
+      - name: Optimize GLB models
+        run: npm run optimize:glb:force
+
+      - name: Optimize images
+        run: npm run optimize:images
+
+      - name: Show size delta
+        run: |
+          echo "=== public/ asset sizes after optimization ==="
+          ls -lh public/*.glb public/*.webp 2>/dev/null || true
+
+      - name: Open PR if anything changed
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: 'chore(assets): re-optimize GLB + images'
+          title: 'chore(assets): re-optimize GLB + images'
+          body: |
+            Automated re-optimization run.
+
+            See the workflow log for size deltas. Review the visual diff
+            before merging (especially `cung-dinh.glb` — has the most
+            geometric detail).
+          branch: 'auto/optimize-assets'
+          base: main
+          delete-branch: true
