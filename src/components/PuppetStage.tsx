@@ -14,6 +14,7 @@ import WaterParticles from './WaterParticles'
 import AmbientParticles from './AmbientParticles'
 import CinematicCamera from './CinematicCamera'
 import { CanvasPerfMonitor } from './PerfMonitor'
+import { setPerfTier } from './perfTier'
 
 // Postprocessing pulls in a 160KB chunk — only load it when actually rendered.
 const EnhancedPostProcessing = lazy(() => import('./EnhancedPostProcessing'))
@@ -58,11 +59,19 @@ export default function PuppetStage({ currentAct, phase, onPuppetClick, onPuppet
       <PerformanceMonitor
         bounds={() => [45, 60]}
         flipflops={3}
-        onIncline={() => setDpr((d) => Math.min(2, d + 0.25))}
-        onDecline={() => setDpr((d) => Math.max(0.75, d - 0.25))}
+        onIncline={() => {
+          setDpr((d) => Math.min(2, d + 0.25))
+          setPerfTier('high')
+        }}
+        onDecline={() => {
+          setDpr((d) => Math.max(0.75, d - 0.25))
+          setPerfTier('medium')
+          setEnablePost(false)
+        }}
         onFallback={() => {
           setDpr(1)
           setEnablePost(false)
+          setPerfTier('low')
         }}
       />
 

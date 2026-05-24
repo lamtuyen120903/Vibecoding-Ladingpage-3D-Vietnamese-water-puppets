@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { ActId } from '../App'
+import { usePerfTier } from './perfTier'
 
 interface Props {
   currentAct: ActId
@@ -17,11 +18,20 @@ const actColors: Record<ActId, { ambient: number; dirIntensity: number }> = {
 export default function StageLighting({ currentAct }: Props) {
   const ambientRef = useRef<THREE.AmbientLight>(null)
   const sunRef = useRef<THREE.DirectionalLight>(null)
+  const tier = usePerfTier()
+
+  // Shadows are by far the heaviest GPU cost on this scene (the whole scene
+  // re-renders from the light's POV every frame). Drop them on low-end so the
+  // weak machine still hits 30+ fps. Ambient/dir-light intensity is bumped a
+  // touch in that case so the floor doesn't go visibly flatter.
+  const shadowsOn = tier !== 'low'
+  const shadowMapSize = tier === 'high' ? 1024 : 512
 
   useFrame(() => {
     const cfg = actColors[currentAct]
     if (ambientRef.current) {
-      ambientRef.current.intensity += (cfg.ambient - ambientRef.current.intensity) * 0.03
+      const target = cfg.ambient + (shadowsOn ? 0 : 0.12)
+      ambientRef.current.intensity += (target - ambientRef.current.intensity) * 0.03
     }
     if (sunRef.current) {
       sunRef.current.intensity += (cfg.dirIntensity - sunRef.current.intensity) * 0.03
@@ -46,8 +56,8 @@ export default function StageLighting({ currentAct }: Props) {
         position={[5, 10, 8]}
         intensity={1.8}
         color="#f8e8c8"
-        castShadow
-        shadow-mapSize={[768, 768]}
+        castShadow={shadowsOn}
+        shadow-mapSize={[shadowMapSize, shadowMapSize]}
         shadow-bias={-0.0008}
         shadow-camera-left={-12}
         shadow-camera-right={12}

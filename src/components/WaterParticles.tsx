@@ -2,6 +2,7 @@ import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { ActId, StagePhase } from '../App'
+import { usePerfTier } from './perfTier'
 
 const MAX_PARTICLES = 150
 
@@ -69,6 +70,13 @@ interface WaterParticlesProps {
 }
 
 export default function WaterParticles({ currentAct, phase }: WaterParticlesProps) {
+  const tier = usePerfTier()
+  // Throttle emission rate by tier — fewer splash bursts on weak GPUs.
+  const emitIntervalScale = tier === 'high' ? 1 : tier === 'medium' ? 1.6 : 2.5
+  // Skip the per-frame life-decay loop on low tier 2 out of 3 frames.
+  const lowTierSkipMask = tier === 'low' ? 2 : 0
+  const frameTickRef = useRef(0)
+
   const meshRef = useRef<THREE.Points>(null)
   const lastEmitTimeRef = useRef(0)
   const emitIndexRef = useRef(0)
@@ -147,6 +155,11 @@ export default function WaterParticles({ currentAct, phase }: WaterParticlesProp
 
   useFrame(({ clock }) => {
     if (!meshRef.current) return
+
+    // On low tier, only run the per-frame work every Nth frame
+    frameTickRef.current += 1
+    if (lowTierSkipMask && (frameTickRef.current % (lowTierSkipMask + 1)) !== 0) return
+
     const elapsed = clock.getElapsedTime()
     const delta = elapsed - prevTimeRef.current
     prevTimeRef.current = elapsed
@@ -166,19 +179,18 @@ export default function WaterParticles({ currentAct, phase }: WaterParticlesProp
     }
     if (needsUpdate) lifeAttr.needsUpdate = true
 
-    // Emit particles when puppets emerge from water
-    // ThuyDinh pool Y is -0.75, puppets emerge around y = -0.25 (baseY - 0.5)
-    // Emit at regular intervals during "performing" phase
-    if (phase === 'performing' && elapsed - lastEmitTimeRef.current > 0.15) {
-      // Emit at random positions across the pool (puppet emergence locations)
+    // Emit particles when puppets emerge from water (tier-throttled).
+    const performingInterval = 0.15 * emitIntervalScale
+    const openingInterval    = 0.08 * emitIntervalScale
+
+    if (phase === 'performing' && elapsed - lastEmitTimeRef.current > performingInterval) {
       const poolX = (Math.random() - 0.5) * 6
       const poolZ = -1 + (Math.random() - 0.5) * 4
       emit(poolX, -0.5, poolZ)
       lastEmitTimeRef.current = elapsed
     }
 
-    // During opening phase, more dramatic splashes
-    if (phase === 'opening' && elapsed - lastEmitTimeRef.current > 0.08) {
+    if (phase === 'opening' && elapsed - lastEmitTimeRef.current > openingInterval) {
       const poolX = (Math.random() - 0.5) * 7
       const poolZ = -1 + (Math.random() - 0.5) * 5
       emit(poolX, -0.6, poolZ)
