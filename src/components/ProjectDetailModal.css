@@ -7,7 +7,9 @@
   justify-content: flex-end;
   background: rgba(7, 14, 22, 0.7);
   backdrop-filter: blur(8px);
+  animation: pdm-overlay-in 0.3s ease both;
 }
+.pdm-overlay--closing { animation: pdm-overlay-out 0.3s ease both; }
 
 .pdm-panel {
   position: relative;
@@ -23,6 +25,20 @@
   );
   border-left: 1px solid rgba(196, 149, 58, 0.12);
   box-shadow: -10px 0 40px rgba(0, 0, 0, 0.4);
+  animation: pdm-panel-in 0.4s 0.05s ease both;
+  will-change: transform, opacity;
+}
+.pdm-panel--closing { animation: pdm-panel-out 0.3s ease both; }
+
+@keyframes pdm-overlay-in  { from { opacity: 0; } to   { opacity: 1; } }
+@keyframes pdm-overlay-out { from { opacity: 1; } to   { opacity: 0; } }
+@keyframes pdm-panel-in {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes pdm-panel-out {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(30px); }
 }
 
 /* Close */

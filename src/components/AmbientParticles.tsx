@@ -2,6 +2,7 @@ import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { usePerfTier, tierScale } from './perfTier'
+import { noRaycast } from './noRaycast'
 
 const FIREFLY_MAX = 140
 
@@ -155,6 +156,7 @@ export default function AmbientParticles() {
       ref={meshRef}
       args={[undefined, undefined, FIREFLY_MAX]}
       frustumCulled={false}
+      raycast={noRaycast}
     >
       <sphereGeometry args={[1, 6, 6]} />
       <meshBasicMaterial

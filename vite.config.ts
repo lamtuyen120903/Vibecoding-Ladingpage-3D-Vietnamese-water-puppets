@@ -18,7 +18,6 @@ export default defineConfig({
           if (id.includes('/three/') || id.endsWith('/three')) return 'three-core'
           if (id.includes('@react-three/postprocessing') || id.includes('/postprocessing/')) return 'three-post'
           if (id.includes('@react-three/')) return 'three-fiber'
-          if (id.includes('framer-motion')) return 'motion'
           if (id.includes('react-dom') || id.includes('/react/')) return 'react-vendor'
         },
       },

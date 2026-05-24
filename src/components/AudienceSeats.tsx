@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import * as THREE from 'three'
 import { useGLTF, Instances, Instance, Merged } from '@react-three/drei'
+import { noRaycast } from './noRaycast'
 
 const SEATS_URL = '/seats-row.glb'
 useGLTF.preload(SEATS_URL, true, true)
@@ -79,6 +80,7 @@ export default function AudienceSeats() {
       if (m.isMesh) {
         m.castShadow = false
         m.receiveShadow = false
+        m.raycast = noRaycast
         out[m.name || `m${idx++}`] = m
       }
     })

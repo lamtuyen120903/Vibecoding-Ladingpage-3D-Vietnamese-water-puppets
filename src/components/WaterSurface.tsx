@@ -1,6 +1,7 @@
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { noRaycast } from './noRaycast'
 
 const vertexShader = `
   uniform float uTime;
@@ -157,7 +158,7 @@ export default function WaterSurface() {
   return (
     <group>
       {/* Water — contained within pool */}
-      <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[poolX, poolY, poolZ]} receiveShadow>
+      <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[poolX, poolY, poolZ]} receiveShadow raycast={noRaycast}>
         <planeGeometry args={[poolW, poolD, 80, 80]} />
         <shaderMaterial vertexShader={vertexShader} fragmentShader={fragmentShader}
           uniforms={uniforms} transparent side={THREE.DoubleSide} depthWrite={false} />
@@ -201,7 +202,7 @@ export default function WaterSurface() {
           bộ phía camera để TRỐNG → lộ ảnh nền (bg-video) sau canvas trong suốt,
           thay vì mảng sàn đen kéo dài xuống đáy màn hình.
           Sâu 11.8, tâm z = -0.1 → trải z ∈ [-6, 5.8]. */}
-      <mesh position={[0, poolY - 0.02, -0.1]} rotation={[-Math.PI / 2, 0, 0]} material={darkFloor} receiveShadow>
+      <mesh position={[0, poolY - 0.02, -0.1]} rotation={[-Math.PI / 2, 0, 0]} material={darkFloor} receiveShadow raycast={noRaycast}>
         <planeGeometry args={[11.1, 11.8]} />
       </mesh>
     </group>

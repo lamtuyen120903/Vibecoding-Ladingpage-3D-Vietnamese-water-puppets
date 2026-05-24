@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { ActId, StagePhase } from '../App'
 import { usePerfTier } from './perfTier'
+import { noRaycast } from './noRaycast'
 
 const MAX_PARTICLES = 150
 
@@ -204,6 +205,7 @@ export default function WaterParticles({ currentAct, phase }: WaterParticlesProp
       geometry={geometry}
       material={material}
       frustumCulled={false}
+      raycast={noRaycast}
     />
   )
 }

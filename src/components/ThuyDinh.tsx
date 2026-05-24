@@ -4,6 +4,7 @@ import { useGLTF, useAnimations } from '@react-three/drei'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
 
 import * as THREE from 'three'
+import { noRaycast } from './noRaycast'
 
 // === Tier 1 (hero) — preload immediately so the central pavilion is the first
 // heavy asset on the wire. Loads in parallel with code chunks.
@@ -497,7 +498,7 @@ function CungDinhModel() {
     const c = scene.clone(true)
     c.traverse((obj) => {
       const m = obj as THREE.Mesh
-      if (m.isMesh) { m.castShadow = true; m.receiveShadow = true }
+      if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; m.raycast = noRaycast }
     })
     return c
   }, [scene])
@@ -537,7 +538,7 @@ function BucModel() {
     const c = scene.clone(true)
     c.traverse((obj) => {
       const m = obj as THREE.Mesh
-      if (m.isMesh) { m.castShadow = true; m.receiveShadow = true }
+      if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; m.raycast = noRaycast }
     })
     return c
   }, [scene])
@@ -582,7 +583,7 @@ function MusicianModel({ side }: { side: -1 | 1 }) {
     const c = SkeletonUtils.clone(scene) as THREE.Group
     c.traverse((obj) => {
       const m = obj as THREE.Mesh
-      if (m.isMesh) { m.castShadow = true; m.receiveShadow = true }
+      if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; m.raycast = noRaycast }
     })
     return c
   }, [scene])
