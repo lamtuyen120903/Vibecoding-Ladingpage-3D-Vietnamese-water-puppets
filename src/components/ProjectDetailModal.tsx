@@ -30,6 +30,10 @@ export default function ProjectDetailModal({ project, onClose }: Props) {
   // panel fades out with its actual contents instead of going blank.
   const [shown, setShown] = useState<Project | null>(project)
   const [closing, setClosing] = useState(false)
+  // Per-image load state — shows a spinner over each gallery slot until the
+  // image actually arrives. Important on slow networks.
+  const [imageLoaded, setImageLoaded] = useState<Record<number, boolean>>({})
+  const [iframeLoaded, setIframeLoaded] = useState(false)
 
   useEffect(() => {
     if (project) { setShown(project); setClosing(false); return }
@@ -39,6 +43,12 @@ export default function ProjectDetailModal({ project, onClose }: Props) {
       return () => clearTimeout(id)
     }
   }, [project])
+
+  // Reset loading states whenever the user opens a different project.
+  useEffect(() => {
+    setImageLoaded({})
+    setIframeLoaded(false)
+  }, [project?.id])
 
   if (!shown) return null
 
@@ -71,16 +81,23 @@ export default function ProjectDetailModal({ project, onClose }: Props) {
             <div className="pdm-gallery">
               {p.images.map((img, i) => (
                 <div key={i} className="pdm-gallery-item">
-                  <div className="pdm-gallery-placeholder">
-                    <span className="pdm-gallery-icon">&#9670;</span>
-                    <span className="pdm-gallery-label">Hinh {i + 1}</span>
-                  </div>
+                  {!imageLoaded[i] && (
+                    <div className="pdm-gallery-loading">
+                      <div className="pdm-spinner" />
+                      <span className="pdm-gallery-label">Đang tải hình {i + 1}…</span>
+                    </div>
+                  )}
                   <img
                     className="pdm-gallery-img"
                     src={img}
                     alt={`${p.title} ${i + 1}`}
                     loading="lazy"
-                    onError={(e) => { e.currentTarget.style.display = 'none' }}
+                    onLoad={() => setImageLoaded((prev) => ({ ...prev, [i]: true }))}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                      // Hide the spinner even on error so the slot doesn't spin forever.
+                      setImageLoaded((prev) => ({ ...prev, [i]: true }))
+                    }}
                   />
                 </div>
               ))}
@@ -91,11 +108,18 @@ export default function ProjectDetailModal({ project, onClose }: Props) {
             {p.driveFileId ? (
               <div className="pdm-video-section">
                 <div className="pdm-video-embed">
+                  {!iframeLoaded && (
+                    <div className="pdm-video-loading">
+                      <div className="pdm-spinner" />
+                      <span className="pdm-gallery-label">Đang tải video…</span>
+                    </div>
+                  )}
                   <iframe
                     src={`https://drive.google.com/file/d/${p.driveFileId}/preview?autoplay=1`}
                     title={p.title}
                     allow="autoplay; fullscreen"
                     allowFullScreen
+                    onLoad={() => setIframeLoaded(true)}
                   />
                 </div>
               </div>
@@ -108,11 +132,29 @@ export default function ProjectDetailModal({ project, onClose }: Props) {
               </div>
             ) : null}
 
-            {/* Story / Case study */}
+            {/* Story / Case study — paragraphs whose first line ends with ":"
+                are treated as a heading + body (so "NHỮNG GÌ TÔI XÂY DỰNG:" and
+                "💡 KẾT QUẢ:" stand out instead of getting lost in body text). */}
             <div className="pdm-story">
-              {sections.map((section, i) => (
-                <p key={i} className="pdm-story-paragraph">{section}</p>
-              ))}
+              {sections.map((section, i) => {
+                const lines = section.split('\n')
+                const head = (lines[0] ?? '').trim()
+                // Treat the first line as a heading only when it's both short
+                // and ends with ":". This keeps long body sentences that happen
+                // to end with ":" (e.g. "...xem trên: → github.com/...") rendering
+                // as plain paragraphs instead of a giant bold block.
+                const isHeading = head.length > 0 && head.length <= 60 && head.endsWith(':')
+                if (isHeading) {
+                  const body = lines.slice(1).join('\n').trim()
+                  return (
+                    <div key={i} className="pdm-story-block">
+                      <h5 className="pdm-story-heading">{head}</h5>
+                      {body && <p className="pdm-story-paragraph">{body}</p>}
+                    </div>
+                  )
+                }
+                return <p key={i} className="pdm-story-paragraph">{section}</p>
+              })}
             </div>
 
             {/* Tech stack */}
@@ -128,31 +170,31 @@ export default function ProjectDetailModal({ project, onClose }: Props) {
             {/* Contact */}
             {p.contact && (
               <div className="pdm-contact">
-                <h4 className="pdm-tech-label">Lien he</h4>
+                <h4 className="pdm-tech-label">Liên hệ</h4>
                 <div className="pdm-contact-list">
                   {p.contact.linkedin && (
-                    <a className="pdm-contact-item" href={p.contact.linkedin} target="_blank" rel="noopener noreferrer">
+                    <a className="pdm-contact-item pdm-contact-item--linkedin" href={p.contact.linkedin} target="_blank" rel="noopener noreferrer">
                       <span className="pdm-contact-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
                       </span> LinkedIn
                     </a>
                   )}
                   {p.contact.github && (
-                    <a className="pdm-contact-item" href={p.contact.github} target="_blank" rel="noopener noreferrer">
+                    <a className="pdm-contact-item pdm-contact-item--github" href={p.contact.github} target="_blank" rel="noopener noreferrer">
                       <span className="pdm-contact-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.29-.01-1.04-.02-2.05-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.96 0-1.32.47-2.39 1.24-3.23-.12-.31-.54-1.53.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6.01 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.65.24 2.87.12 3.18.77.84 1.24 1.91 1.24 3.23 0 4.63-2.81 5.65-5.49 5.95.43.37.81 1.1.81 2.22 0 1.6-.01 2.89-.01 3.29 0 .32.22.7.83.58A12.01 12.01 0 0 0 24 12.5C24 5.87 18.63.5 12 .5z"/></svg>
                       </span> GitHub
                     </a>
                   )}
                   {p.contact.email && (
-                    <a className="pdm-contact-item" href={`mailto:${p.contact.email}`}>
+                    <a className="pdm-contact-item pdm-contact-item--email" href={`mailto:${p.contact.email}`}>
                       <span className="pdm-contact-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
                       </span> {p.contact.email}
                     </a>
                   )}
                   {p.contact.phone && (
-                    <a className="pdm-contact-item" href={`tel:${p.contact.phone.replace(/\s/g, '')}`}>
+                    <a className="pdm-contact-item pdm-contact-item--phone" href={`tel:${p.contact.phone.replace(/\s/g, '')}`}>
                       <span className="pdm-contact-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.62 10.79a15.53 15.53 0 0 0 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.07 21 3 13.93 3 5c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.24.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
                       </span> {p.contact.phone}

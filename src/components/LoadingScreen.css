@@ -1,0 +1,244 @@
+/* ===== Loading Screen — Vietnamese water puppet theater theme ===== */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(ellipse at center, #1a0d0d 0%, #050202 75%);
+  animation: ls-fade-in 0.35s ease both;
+  font-family: var(--font-display, 'Be Vietnam Pro', -apple-system, sans-serif);
+  color: var(--color-text, #f0c04a);
+  user-select: none;
+}
+
+.loading-screen--hiding {
+  animation: ls-fade-out 0.6s ease both;
+  pointer-events: none;
+}
+
+@keyframes ls-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes ls-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; transform: scale(1.02); }
+}
+
+.loading-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 2.5rem 3rem;
+  text-align: center;
+}
+
+/* --- Decorative lantern --- */
+.loading-lantern {
+  position: relative;
+  width: 80px;
+  height: 100px;
+  margin-bottom: 1.5rem;
+  animation: ls-lantern-sway 3.2s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+.loading-lantern__cap {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 8px;
+  background: linear-gradient(180deg, #b08030 0%, #5a3818 100%);
+  border-radius: 2px 2px 0 0;
+}
+
+.loading-lantern__body {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 72px;
+  height: 78px;
+  background:
+    radial-gradient(ellipse at center, #f0c04a 0%, #cc4030 55%, #8a1818 100%);
+  border-radius: 50%;
+  box-shadow:
+    0 0 30px rgba(240, 180, 60, 0.45),
+    0 0 60px rgba(204, 60, 40, 0.3),
+    inset 0 -10px 14px rgba(122, 24, 24, 0.7);
+  overflow: hidden;
+  animation: ls-lantern-glow 2.4s ease-in-out infinite;
+}
+
+.loading-lantern__glow {
+  position: absolute;
+  inset: 12% 25%;
+  background: radial-gradient(ellipse, rgba(255, 220, 120, 0.85) 0%, transparent 70%);
+  filter: blur(4px);
+}
+
+.loading-lantern__rib {
+  position: absolute;
+  top: 4%;
+  bottom: 4%;
+  width: 1px;
+  background: rgba(60, 10, 10, 0.55);
+}
+.loading-lantern__rib--l { left: 30%; transform: rotate(-6deg); }
+.loading-lantern__rib--r { left: 70%; transform: rotate(6deg); }
+
+.loading-lantern__base {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 6px;
+  background: linear-gradient(180deg, #5a3818 0%, #2a1808 100%);
+  border-radius: 0 0 2px 2px;
+}
+
+.loading-lantern__tassel {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 14px;
+  background: linear-gradient(180deg, #d4a94a 0%, transparent 100%);
+  border-radius: 1px;
+}
+
+@keyframes ls-lantern-sway {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50%      { transform: rotate(2.5deg); }
+}
+@keyframes ls-lantern-glow {
+  0%, 100% { box-shadow: 0 0 30px rgba(240, 180, 60, 0.45), 0 0 60px rgba(204, 60, 40, 0.3), inset 0 -10px 14px rgba(122, 24, 24, 0.7); }
+  50%      { box-shadow: 0 0 38px rgba(240, 200, 80, 0.65), 0 0 80px rgba(220, 80, 50, 0.4), inset 0 -10px 14px rgba(122, 24, 24, 0.7); }
+}
+
+/* --- Title --- */
+.loading-title {
+  font-family: var(--font-display, 'Be Vietnam Pro', -apple-system, sans-serif);
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text, #f0c04a);
+  text-shadow:
+    0 0 24px rgba(240, 180, 60, 0.45),
+    0 0 60px rgba(200, 100, 40, 0.25),
+    0 2px 6px rgba(0, 0, 0, 0.85);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.loading-subtitle {
+  font-family: var(--font-body, 'Be Vietnam Pro', -apple-system, sans-serif);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.25em;
+  text-transform: lowercase;
+  color: rgba(240, 192, 74, 0.7);
+  margin-bottom: 1.5rem;
+}
+
+/* --- Progress bar --- */
+.loading-bar {
+  position: relative;
+  width: 240px;
+  height: 4px;
+  background: rgba(240, 192, 74, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.loading-bar__fill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(216, 110, 50, 0.9) 0%,
+    rgba(240, 192, 74, 1) 50%,
+    rgba(255, 220, 120, 0.95) 100%
+  );
+  box-shadow: 0 0 12px rgba(240, 192, 74, 0.7);
+  border-radius: 999px;
+  transition: width 0.35s ease-out;
+  position: relative;
+}
+
+/* Sheen sweep on the filled portion */
+.loading-bar__fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 100%);
+  animation: ls-bar-sheen 1.6s ease-in-out infinite;
+}
+
+@keyframes ls-bar-sheen {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.loading-percent {
+  font-family: var(--font-display, 'Be Vietnam Pro', -apple-system, sans-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-top: 0.75rem;
+  color: var(--color-text, #f0c04a);
+  text-shadow: 0 0 16px rgba(240, 180, 60, 0.45);
+}
+
+.loading-percent__sign {
+  font-size: 0.9rem;
+  opacity: 0.65;
+  margin-left: 2px;
+}
+
+.loading-tip {
+  font-family: var(--font-body, 'Be Vietnam Pro', -apple-system, sans-serif);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(240, 192, 74, 0.6);
+  margin-top: 0.75rem;
+  animation: ls-tip-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ls-tip-pulse {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.85; }
+}
+
+/* --- Mobile --- */
+@media (max-width: 480px) {
+  .loading-frame { padding: 2rem 1.5rem; }
+  .loading-title { font-size: 1.25rem; letter-spacing: 0.14em; }
+  .loading-subtitle { font-size: 0.7rem; letter-spacing: 0.18em; margin-bottom: 1.1rem; }
+  .loading-bar { width: 180px; }
+  .loading-percent { font-size: 1.3rem; }
+  .loading-tip { font-size: 0.68rem; letter-spacing: 0.14em; }
+  .loading-lantern { width: 64px; height: 80px; margin-bottom: 1.2rem; }
+  .loading-lantern__body { width: 56px; height: 62px; }
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .loading-lantern,
+  .loading-lantern__body,
+  .loading-bar__fill::after,
+  .loading-tip { animation: none; }
+}

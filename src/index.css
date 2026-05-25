@@ -11,9 +11,16 @@
   --color-soft-cream: #e8dcc8;
   --color-mist: rgba(232, 220, 200, 0.04);
 
-  /* Typography — 2 fonts only */
-  --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-body: 'Inter', -apple-system, sans-serif;
+  /* Typography — single typeface for the whole site */
+  --font-display: 'Be Vietnam Pro', -apple-system, system-ui, sans-serif;
+  --font-body:    'Be Vietnam Pro', -apple-system, system-ui, sans-serif;
+
+  /* Font weights — headings always 700+ */
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-semibold: 600;
+  --weight-bold:    700;
+  --weight-black:   800;
 
   /* Single text color for the whole site */
   --color-text: #f0c04a;
@@ -28,8 +35,11 @@
   --text-xl: 2.4rem;
   --text-hero: 5rem;
 
-  /* Standard button corner radius */
-  --btn-radius: 30px;
+  /* Radius scale */
+  --btn-radius:  999px;   /* All buttons → pill */
+  --chip-radius: 999px;   /* Tag/chip pill */
+  --card-radius: 16px;    /* Cards, panels, modal surfaces */
+  --media-radius: 12px;   /* Image / video frames */
 
   /* Letter-spacing scale — dùng chung cho mọi chữ */
   --tracking-normal: 0.04em;
@@ -39,6 +49,19 @@
 
   /* Spacing: tất cả padding/margin/gap là bội số của 4px
      (rem chẵn: 0.25=4 · 0.5=8 · 0.75=12 · 1=16 · 1.25=20 · 1.5=24 · 2=32) */
+  --space-1: 0.25rem;  /* 4 */
+  --space-2: 0.5rem;   /* 8 */
+  --space-3: 0.75rem;  /* 12 */
+  --space-4: 1rem;     /* 16 */
+  --space-5: 1.25rem;  /* 20 */
+  --space-6: 1.5rem;   /* 24 */
+  --space-8: 2rem;     /* 32 */
+}
+
+/* All headings: bold by default, single font */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
 }
 
 * {

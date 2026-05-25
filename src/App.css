@@ -48,18 +48,19 @@
 
 .opening-title {
   font-family: var(--font-display);
-  font-size: var(--text-hero);
-  font-weight: 700;
+  font-size: 3.5rem;
+  font-weight: var(--weight-black);
   color: var(--color-text);
   text-shadow: 0 0 40px rgba(255, 200, 60, 0.7), 0 0 80px rgba(200, 140, 30, 0.4), 0 3px 10px rgba(0,0,0,0.9);
   margin: 0;
-  letter-spacing: var(--tracking-wider);
+  letter-spacing: var(--tracking-normal);
+  white-space: nowrap;
 }
 
 .opening-subtitle {
   font-family: var(--font-display);
   font-size: var(--text-lg);
-  font-weight: 400;
+  font-weight: var(--weight-regular);
   font-style: italic;
   color: var(--color-text);
   margin: 0.75rem 0 2rem;
@@ -68,12 +69,12 @@
 
 .opening-desc {
   font-family: var(--font-body);
-  font-size: var(--text-base);
-  font-weight: 400;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
   color: var(--color-text);
   letter-spacing: var(--tracking-widest);
   text-transform: uppercase;
-  margin: 0;
+  margin: 0.75rem 0 0;
   text-shadow: 0 0 15px rgba(200, 160, 60, 0.4), 0 1px 4px rgba(0,0,0,0.9);
 }
 
@@ -82,8 +83,10 @@
   bottom: 3rem;
   font-family: var(--font-body);
   font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
   color: var(--color-text);
   letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
   text-shadow: 0 0 10px rgba(200, 160, 60, 0.5), 0 1px 4px rgba(0,0,0,0.8);
   animation: pulse 2s ease-in-out infinite;
   border: 1px solid rgba(200, 160, 60, 0.3);
@@ -127,9 +130,9 @@
     padding: 2rem 2.5rem;
     border-radius: 28px;
   }
-  .opening-title { font-size: 3rem; }
+  .opening-title { font-size: 2.4rem; }
   .opening-subtitle { font-size: 1.3rem; }
-  .opening-desc { font-size: 0.8rem; }
+  .opening-desc { font-size: 0.78rem; }
   .opening-skip { bottom: 2rem; }
 }
 
@@ -139,12 +142,13 @@
     border-radius: 20px;
   }
   .opening-title {
-    font-size: 2.1rem;
-    letter-spacing: 0.05em;
+    font-size: 1.5rem;
+    letter-spacing: 0.04em;
+    white-space: normal;
   }
   .opening-subtitle { font-size: 1rem; }
   .opening-desc {
-    font-size: 0.68rem;
+    font-size: 0.62rem;
     letter-spacing: var(--tracking-wider);
   }
   .opening-skip { bottom: 1.5rem; }

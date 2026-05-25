@@ -18,7 +18,7 @@ const introProject: Project = {
   title: 'Đặng Lam Tuyền',
   category: 'intro',
   shortDescription: '🤖 Marketing Growth | Automation (N8N) | AI Integration | E-commerce Growth | Vibe Coding',
-  storyText: `Tôi thiết kế các giải pháp tự động hóa thông minh giúp doanh nghiệp phát triển và loại bỏ quy trình thủ công. Hãy nói chuyện về automation → github.com/lamtuyen120903 🚀
+  storyText: `Tôi thiết kế các giải pháp tự động hóa thông minh giúp doanh nghiệp phát triển và loại bỏ quy trình thủ công. Hãy tìm hiểu thêm trong portfolio này nhé hoặc có thể xem trên: → github.com/lamtuyen120903
 
 NHỮNG GÌ TÔI XÂY DỰNG:
 • N8N automation workflows kết nối Zalo, Facebook, Telegram, và WordPress
@@ -27,7 +27,7 @@ NHỮNG GÌ TÔI XÂY DỰNG:
 • Business Intelligence dashboards chuyển đổi dữ liệu thành insight hành động
 • Process automations giảm công việc thủ công 60%+ đồng thời cải thiện độ chính xác
 
-💡 TÁC ĐỘNG:
+💡 KẾT QUẢ:
 ✓ 20+ production workflows triển khai trên nhiều nền tảng
 ✓ Tăng 30% engagement rate thông qua smart automation
 ✓ Phát triển cộng đồng 20% thông qua chiến lược engagement có mục tiêu
